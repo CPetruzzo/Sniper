@@ -25,12 +25,12 @@ export namespace SceneManager {
             view: document.getElementById("pixi-canvas") as HTMLCanvasElement,
             resolution: window.devicePixelRatio || 1,
             autoDensity: true,
-            backgroundColor: 0x6495ed,
+            backgroundColor: 0x2C4021,
             width: WIDTH,
             height: HEIGHT
         });
         
-        Keyboard.initialize(); /* lo llamo una vez y nunca mas */
+        Keyboard.initialize();
         window.addEventListener("resize", () => {
             console.log("resized!");
             const scaleX = window.innerWidth / app.screen.width;

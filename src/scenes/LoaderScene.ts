@@ -3,6 +3,7 @@ import { Graphics, Loader, } from "pixi.js";
 import { assets } from "../assets";
 import { SceneBase } from "../utils/SceneBase";
 import { SceneManager } from "../utils/SceneManager";
+import { GameStartScene } from "./GameStartScene";
 
 export class LoaderScene extends SceneBase {
     
@@ -13,9 +14,6 @@ export class LoaderScene extends SceneBase {
     constructor() {
 
         super();
-
-        // const fondo:Sprite = Sprite.from("An adventurer's fate.png");
-        // this.addChild(fondo);
 
         this.loadbar = new Graphics();
         this.setBarPercent(0);
@@ -66,6 +64,6 @@ export class LoaderScene extends SceneBase {
     }
 
     private whenLoadFinishes(){
-        // SceneManager.changeScene(new GameStartScene())
+        SceneManager.changeScene(new GameStartScene())
     }
 }
