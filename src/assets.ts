@@ -9,11 +9,11 @@ export const assets = [
     
 
     // BACKGROUND
-    { url: "./B1.png", name: "B1" },
-    // { url: "./StageOne/B2.png", name: "B2" },
-    // { url: "./StageOne/B3.png", name: "B3" },
-    // { url: "./StageOne/B4.png", name: "B4" },
-    // { url: "./StageOne/B5.png", name: "B5" },
+    { url: "./B1.png", name: "B5" },
+    { url: "./StageOne/B2.png", name: "B2" },
+    { url: "./StageOne/B3.png", name: "B3" },
+    { url: "./StageOne/B4.png", name: "B4" },
+    { url: "./StageOne/B5.png", name: "B1" },
     // { url: "./StartMenu/SETTINGS.png", name: "B6" },
     
 
@@ -31,6 +31,9 @@ export const assets = [
 
     // MUSIQUITA
     { url: "./run.mp3", name: "running", },
+    { url: "./sounds/MaleHurt.mp3", name: "jumper", },
+    { url: "./sounds/Arrow.mp3", name: "bow", },
+    
     // { url: "./StageOne/FinalBattle.mp3", name: "GameBGM", },
     // { url: "./StageOne/Parting.mp3", name: "PartingBGM", },
     // { url: "./StartMenu/Earth.mp3", name: "MapBGM", },

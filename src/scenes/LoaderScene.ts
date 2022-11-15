@@ -30,7 +30,7 @@ export class LoaderScene extends SceneBase {
     }
 
     private downloadAssets() {
-        Loader.registerPlugin(WebfontLoaderPlugin);
+        Loader.registerPlugin(new WebfontLoaderPlugin);
         Loader.shared.add(assets);
         Loader.shared.add({ name: 'From Google 2', url: 'https://fonts.googleapis.com/css2?family=Tangerine&display=swap' });
         Loader.shared.add({ name: 'From Google 3', url: 'https://fonts.googleapis.com/css2?family=Quintessential&display=swap' });

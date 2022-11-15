@@ -1,18 +1,21 @@
-// import { sound } from "@pixi/sound";
+
+import { sound } from "@pixi/sound";
 import { AnimatedSprite, Graphics, IDestroyOptions, ObservablePoint, Rectangle, Text, Texture } from "pixi.js";
 import { Tween } from "tweedle.js";
 
 import { Keyboard } from "../utils/Keyboard";
+import { StateAnimation } from "../utils/StateAnimation";
 import { IHitBox } from "./IHitBox";
 import { PhysicsContainer } from "./PhysicsContainer";
 
 export class Player extends PhysicsContainer implements IHitBox {
 
 
-    // private static readonly GRAVITY = 1000;
+    private static readonly GRAVITY = 1000;
     private static readonly MOVE_SPEED = 350;
     public canJump = true;
     private hitbox: Graphics;
+    private bardo: StateAnimation;
     private bardoWalk: AnimatedSprite;
     private bardoIdle: AnimatedSprite;
     private bardoJump: AnimatedSprite;
@@ -35,8 +38,24 @@ export class Player extends PhysicsContainer implements IHitBox {
     constructor() {
         super();
 
+
+        
         // const running = sound.find("run");
         //BARDO RUN
+
+        this.bardo=new StateAnimation();
+        this.bardo.scale.set(2);
+
+        this.bardo.addState("run", 
+        [
+            "adventurer-run2-00.png",
+            "adventurer-run2-01.png",
+            "adventurer-run2-02.png",
+            "adventurer-run2-03.png",
+            "adventurer-run2-04.png",
+            "adventurer-run2-05.png",
+        ], 0.15, true );
+
         this.bardoWalk = new AnimatedSprite(
             [
                 Texture.from("adventurer-run2-00.png"),
@@ -227,7 +246,7 @@ export class Player extends PhysicsContainer implements IHitBox {
         this.hitbox.drawRect(-20, -56, 40, 56);
         this.hitbox.endFill();
 
-        // this.acceleration.y = Player.GRAVITY;
+        this.acceleration.y = Player.GRAVITY;
 
         // MOVIMIENTOS
         Keyboard.down.on("KeyW", this.jump, this);
@@ -315,7 +334,10 @@ export class Player extends PhysicsContainer implements IHitBox {
     public jump() {
         if (this.canJump) {
             // console.log("apreté la W!", this);
-            // this.speed.y = -(Player.GRAVITY * 0.7)
+            sound.stop("running");
+            const jump = sound.find("jumper");
+            jump.play({ loop: false, volume: 0.05 });            
+            this.speed.y = -(Player.GRAVITY * 0.7)
             this.canJump = false;
             this.bardoJump.visible = true;
             this.bardoIdle.visible = false;
@@ -351,8 +373,10 @@ export class Player extends PhysicsContainer implements IHitBox {
     public runLeft() {
         // console.log("apreté la A!", this);
         // const run = sound.find("running");
-        // run.play({ loop: true, volume: 0.05 })
-        
+        // run.play({ loop: false, volume: 0.05 })
+        // this.bardo.playState("run", true);
+        const run = sound.find("running");
+        run.play({ loop: true, volume: 0.05 });
         this.speed.x = -Player.MOVE_SPEED;
         this.scale.set(-2, 2);
         this.bardoWalk.visible = true;
@@ -367,10 +391,11 @@ export class Player extends PhysicsContainer implements IHitBox {
 
     public runRight() {
         // console.log("apreté la D!", this);
-        // const run = sound.find("running");
-        // run.play({ loop: true, volume: 0.05 })
+        const run = sound.find("running");
+        run.play({ loop: true, volume: 0.05 })
         this.speed.x = Player.MOVE_SPEED;
         this.scale.set(2, 2);
+        // this.bardo.playState("run");
         this.bardoWalk.visible = true;
         this.bardoIdle.visible = false;
         this.bardoJump.visible = false;
@@ -408,7 +433,10 @@ export class Player extends PhysicsContainer implements IHitBox {
 }
 
     public punchRun() {
-        // console.log("apreté la J!", this);
+        sound.stop("running");
+        sound.stop("jump");
+        const atkbow = sound.find("bow");
+        atkbow.play({ loop: true, volume: 0.05 })
         this.speed.x = this.speed.x * 2;
         this.bardoJump.visible = false;
         this.bardoIdle.visible = false;
@@ -422,7 +450,6 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     public idlePlayer() {
-        // console.log("ninguna tecla presionada", this);
         this.speed.x = 0;
         this.bardoJump.visible = false;
         this.bardoIdle.visible = true;
@@ -433,7 +460,6 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     public fall(){
-        // this.bardoHurted.visible = true;
         this.bardoIdle.visible = false;
         this.bardoWalk.visible = false;
         this.bardoJump.visible = false;
@@ -443,6 +469,10 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     public bow(){
+        // sound.stop("running");
+        // sound.stop("jump");
+
+
         this.bardoBow.visible = true;
         this.bardoIdle.visible = false;
         this.bardoWalk.visible = false;
@@ -452,9 +482,21 @@ export class Player extends PhysicsContainer implements IHitBox {
         this.bardoRunPunch.visible = false;
         this.bardoBow.gotoAndPlay(0);
         this.bardoJumpBow.visible = false;
+        
+        new Tween(this.jumpBow).to({ }, 450).start().onComplete(() => {
+            const atkbow = sound.find("bow");
+            atkbow.play({ loop: true, volume: 0.05, speed: 1.2 })
+        }) 
     }
 
     public jumpBow(){  
+        // sound.stop("running");
+        // sound.stop("jump");
+        new Tween(this.jumpBow).to({ }, 70).start().onComplete(() => {
+            const atkbow = sound.find("bow");
+            atkbow.play({ loop: true, volume: 0.05, speed: 1.5 })
+        }) 
+
         this.bardoJumpBow.visible = true;
         this.bardoIdle.visible = false;
         this.bardoWalk.visible = false;
@@ -467,8 +509,6 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     private stopJump() {
-        // console.log("solté la W!", this);
-
         this.bardoCrawl.visible = false;
         this.bardoJump.visible = false;
         this.bardoIdle.visible = true;
@@ -478,7 +518,6 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     private stopCrawl() {
-        // console.log("solté la S!", this);
         this.speed.x = 0;
         this.bardoCrawl.visible = false;
         this.bardoJump.visible = false;
@@ -495,7 +534,7 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     private stopRunLeft() {
-        // console.log("solté la A!", this);
+        sound.stop("running");
         this.speed.x = 0;
         this.scale.set(-2, 2);
         this.bardoWalk.visible = false;
@@ -506,7 +545,7 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     private stopRunRight() {
-        // console.log("solté la D!", this);
+        sound.stop("running");
         this.speed.x = 0;
         this.scale.set(2, 2);
         this.bardoWalk.visible = false;
@@ -518,7 +557,6 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     public stopPunch() {
-        // console.log("solté la J!", this);
         this.speed.x = this.speed.x / 2;
         this.bardoJump.visible = false;
         this.bardoIdle.visible = true;
@@ -529,6 +567,8 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     private stopBow(){
+        sound.stop("bow");
+
         this.bardoBow.visible = false;
         this.bardoIdle.visible = true;
         this.bardoWalk.visible = false;
@@ -539,6 +579,7 @@ export class Player extends PhysicsContainer implements IHitBox {
     }
 
     private stopJumpBow(){
+        sound.stop("bow");
         this.bardoJumpBow.visible = false;
         this.bardoIdle.visible = true;
         this.bardoWalk.visible = false;
@@ -556,7 +597,7 @@ export class Player extends PhysicsContainer implements IHitBox {
         return this.hitbox.getBounds();
     }
 
-    //PARA SEPARAR JUGADORES DE SUS PLATAFORMAS
+    // PARA SEPARAR JUGADORES DE SUS PLATAFORMAS
     public separate(overlap: Rectangle, platform: ObservablePoint<any>) {
         if (overlap.width < overlap.height) {
             if (this.x < platform.x) {
