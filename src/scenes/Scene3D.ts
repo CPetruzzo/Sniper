@@ -1,15 +1,13 @@
 import { Container, Graphics, Texture, TilingSprite } from "pixi.js";
-import { Arek } from "../games/Enemies/Arek";
-import { Player } from "../games/Player";
+import { Player3D } from "../games/Player3D";
 import { SceneBase } from "../utils/SceneBase";
 import { SceneManager } from "../utils/SceneManager";
 
 
-export class GameStartScene extends SceneBase {
-    private playerBardo: Player;
+export class Scene3D extends SceneBase {
+    private playerBardo: Player3D;
     private backgrounds: TilingSprite[];
     private world: Container;
-    private arek: Arek;
 
     constructor() {
         super();
@@ -37,17 +35,13 @@ export class GameStartScene extends SceneBase {
         }
 
         // UN JUGADOR
-        this.playerBardo = new Player();
+        this.playerBardo = new Player3D();
         this.playerBardo.scale.set(2);
         this.playerBardo.position.y = 600;
         this.world.addChild(this.playerBardo);
 
         this.addChild(this.world);
 
-        this.arek = new Arek();
-        this.arek.position.y=600;
-        this.arek.position.x=500;
-        this.addChild(this.arek);
     }
 
     // ACTUALIZACION PARA DARLE SU FISICA Y SU MOVIMIENTO
@@ -79,6 +73,7 @@ export class GameStartScene extends SceneBase {
             this.playerBardo.y = (SceneManager.HEIGHT - 100);
             this.playerBardo.canJump = true;
         }
+
 
         // CAMARA SEGUÍ A MI PERSONAJE
         (this.world.x = - this.playerBardo.x * this.worldTransform.a + SceneManager.WIDTH / 3)

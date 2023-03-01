@@ -28,6 +28,7 @@ export const assets = [
     // PLAYER
     { url: "./spritesheet (6).json", name: "Player" },
     { url: "./spritesheet (10).json", name: "PlayerBow" },
+    { url: "./arrow.png", name: "Arrow" },
 
     // MUSIQUITA
     { url: "./run.mp3", name: "running", },
