@@ -94,7 +94,6 @@
 				"road": "models/road/road.gltf",
 				"hauntedhouse": "models/hauntedhouse/hauntedhouse.gltf",
 				"firstperson": "models/person/firstperson/firstperson.gltf",
-				"vignette": "models/vignette.png"
 			}
 		}
 	]

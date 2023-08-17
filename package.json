@@ -1,10 +1,10 @@
 {
-  "name": "bunnybox",
+  "name": "3DGame",
   "version": "0.0.1",
   "description": "BunnyBox is a boilerplate/engine for pixijs. Descendant of the great killabunnies engine",
   "pwa": {
     "name": "BunnyBox powered PWA",
-    "short_name": "BunnyBox",
+    "short_name": "3DGame",
     "description": "My awesome Progressive Web App!",
     "background_color": "#ee0000"
   },
