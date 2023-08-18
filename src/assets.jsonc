@@ -94,7 +94,13 @@
 				"road": "models/road/road.gltf",
 				"hauntedhouse": "models/hauntedhouse/hauntedhouse.gltf",
 				"firstperson": "models/person/firstperson/firstperson.gltf",
-			}
+				"rifle": "models/animated_rifle/rifle.gltf",
+				"dragon": "models/dragon/scene.gltf",
+				"idle1": "models/person/idle1/idle1.gltf",
+				"idle2": "models/person/idle2/idle2.gltf",
+				"running": "models/person/running/running.gltf",
+				"character": "models/character/scene.gltf"
+				}
 		}
 	]
 }
