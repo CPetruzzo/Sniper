@@ -6,7 +6,7 @@ import type { ResolveOverride } from "../ITransition";
 import { TweenUtils } from "../../tweens/tweenUtils";
 import { CircularGradientProgress, CircularGradientProgressOptions } from "../../progressbar/CircularGradientProgress";
 
-export class LoadingTransition extends TransitionBase {
+export class CircularLoadingTransition extends TransitionBase {
 	private readonly color: number;
 	private readonly fadeInTime: number;
 	private readonly fadeOutTime: number;

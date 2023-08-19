@@ -122,7 +122,7 @@ export class Scene3D extends PixiScene {
 		// 	eachpocho.zIndex = -eachpocho.distanceFromCamera();
 		//   }
 
-		this.dragon.z += Scene3D.vehiculeSpeed;
+		this.dragon.z += Scene3D.vehiculeSpeed * 3;
 
 		if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
 			const angleYRad = cameraControl.angles.y * (Math.PI / 180); // Convert degrees to radians
