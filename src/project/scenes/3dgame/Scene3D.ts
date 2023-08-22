@@ -1,30 +1,30 @@
 import { Assets } from "@pixi/assets";
 import type { CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
-import { Light, LightingEnvironment, Model, LightType, Color } from "pixi3d/pixi7";
-// import { fancyGroupLog, fancyLog, silencedLog } from "../../../loggers";
-import { PixiScene } from "./engine/scenemanager/scenes/PixiScene";
-import { cameraControl } from ".";
-import { Keyboard } from "./engine/input/Keyboard";
+import { Light, LightingEnvironment, Model, LightType, Color, Mesh3D } from "pixi3d/pixi7";
+import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
+import { cameraControl } from "../../..";
+import { Keyboard } from "../../../engine/input/Keyboard";
 import { Tween } from "tweedle.js";
+import { Text, TextStyle } from "pixi.js";
 
 export class Scene3D extends PixiScene {
 	public static readonly BUNDLES = ["3d"];
-	private impala: Model;
-	private road: Model;
-	private hauntedhouse: Model;
-	private firstperson: Model;
-	public dragon: Model;
-
-	public static handMovementAmplitude = 0.05; // Ajusta la amplitud del movimiento de las manos
-	public static handMovementFrequency = 0.005; // Ajusta la frecuencia del movimiento de las manos
-	// Configura velocidades para el movimiento de la cámara
+	public static handMovementAmplitude = 0.05;
+	public static handMovementFrequency = 0.005;
 	public static cameraMoveSpeed = 0.2;
 	public static vehiculeSpeed = 0.4;
 	public static cameraRotationSpeed = 0.01;
 	public static GRAVITY = 200;
+
+	private impala: Model;
+	private road: Model;
+	private hauntedhouse: Model;
+	private firstperson: Model;
+	private dragon: Model;
 	private cameraControl: CameraOrbitControl;
-	private idle: boolean = true;
 	public zoomCameraControl: CameraOrbitControl;
+	public explanationText: Text = new Text("this is the explanation");
+	public onCar: boolean = false;
 
 	constructor() {
 		super();
@@ -32,7 +32,6 @@ export class Scene3D extends PixiScene {
 		this.impala = Model.from(Assets.get("impala"));
 		this.road = Model.from(Assets.get("road"));
 		this.hauntedhouse = Model.from(Assets.get("hauntedhouse"));
-
 		this.firstperson = Model.from(Assets.get("firstperson"));
 		this.dragon = Model.from(Assets.get("dragon"));
 
@@ -44,6 +43,8 @@ export class Scene3D extends PixiScene {
 		this.hauntedhouse.x = 50;
 
 		this.addChild(this.impala, this.road, this.hauntedhouse, this.firstperson, this.dragon);
+
+		this.makeDemoText();
 
 		const dirLight = new Light();
 		dirLight.type = LightType.directional;
@@ -83,6 +84,18 @@ export class Scene3D extends PixiScene {
 			mat.metallic = 0;
 		});
 
+		const shinyKnob = Mesh3D.createCylinder();
+		shinyKnob.scale.set(0.01, 0.01, 0.01);
+		shinyKnob.position.set(0.1, 0.02, 0);
+		this.impala.addChild(shinyKnob);
+
+		new Tween(shinyKnob).to({ alpha: 0.2 }, 500).repeat(Infinity).yoyo(true).start();
+
+		shinyKnob.on("pointertap", () => {
+			console.log("knob");
+			this.getInCar();
+		});
+
 		this.dragon.z = -500;
 		this.dragon.animations[0].loop = true;
 		this.dragon.animations[0].play();
@@ -93,16 +106,29 @@ export class Scene3D extends PixiScene {
 			mat.roughness = 0.6;
 			mat.metallic = 0;
 		});
+	}
 
-		// Example of how to use the logger
+	private getInCar(): void {
+		new Tween(this.cameraControl).to({ x: this.impala.x, y: this.impala.y }, 500).start();
+	}
 
-		// fancyLog("Fancy logs with correct line numbers over there ---->");
+	/**
+	 * Method to make the text explaining the demo. Nothing to see here.
+	 */
+	private makeDemoText(): void {
+		const textStyle = new TextStyle({
+			fill: "white",
+			fontFamily: "Arial Rounded MT",
+			stroke: "black",
+			strokeThickness: 10,
+			lineJoin: "round",
+		});
 
-		// fancyGroupLog("we also have fancy groups!");
-		// fancyLog("Remember to call groupend :P");
-		// console.groupEnd();
-
-		// silencedLog("Silenced in the loggers.ts file!");
+		this.explanationText = new Text(
+			"Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up, \nUse R/F to move car",
+			textStyle
+		);
+		this.addChild(this.explanationText);
 	}
 
 	public override update(dt: number): void {
@@ -111,117 +137,119 @@ export class Scene3D extends PixiScene {
 		this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
 		this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
 		this.firstperson.position.y = this.cameraControl.target.y + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
-
-		// Object.assign(vignette, {
-		// 	width: app.renderer.width, height: app.renderer.height
-		//   });
-		//   for (let eachpocho of pocho) {
-		// 	eachpocho.update();
-
-		// 	// This will render the bunnies from back to front.
-		// 	eachpocho.zIndex = -eachpocho.distanceFromCamera();
-		//   }
-
 		this.dragon.z += Scene3D.vehiculeSpeed * 3;
 
+		const angleYRad = cameraControl.angles.y * (Math.PI / 180);
+		const angleXRad = cameraControl.angles.x * (Math.PI / 180);
+		const moveX = Scene3D.cameraMoveSpeed * Math.sin(angleYRad);
+		const moveY = Scene3D.cameraMoveSpeed * Math.sin(angleXRad);
+		const moveZ = Scene3D.cameraMoveSpeed * Math.cos(angleYRad);
 		if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
-			const angleYRad = cameraControl.angles.y * (Math.PI / 180); // Convert degrees to radians
-			const angleXRad = cameraControl.angles.x * (Math.PI / 180); // Convert degrees to radians
-			// playSFX("running", { loop: true, volume: 0.05 })
-
-			const moveZ = Scene3D.cameraMoveSpeed * Math.cos(angleYRad);
-			const moveX = Scene3D.cameraMoveSpeed * Math.sin(angleYRad);
-			const moveY = Scene3D.cameraMoveSpeed * Math.sin(angleXRad);
-
 			if (Keyboard.shared.isDown("KeyW")) {
-				cameraControl.target.z += moveZ; // Mueve el objetivo hacia adelante
-				cameraControl.target.x += moveX; // Mueve el objetivo hacia adelante
-				cameraControl.target.y -= moveY; // Mueve el objetivo hacia arriba
+				cameraControl.target.z += moveZ;
+				cameraControl.target.x += moveX;
+				cameraControl.target.y -= moveY;
 			}
 
 			if (Keyboard.shared.isDown("KeyS")) {
-				cameraControl.target.z -= moveZ; // Mueve el objetivo hacia atrás
-				cameraControl.target.x -= moveX; // Mueve el objetivo hacia atrás
-				cameraControl.target.y += moveY; // Mueve el objetivo hacia abajo
+				cameraControl.target.z -= moveZ;
+				cameraControl.target.x -= moveX;
+				cameraControl.target.y += moveY;
 			}
 
 			if (Keyboard.shared.isDown("KeyA")) {
-				cameraControl.target.z -= moveX; // Mueve el objetivo hacia la izquierda
-				cameraControl.target.x += moveZ; // Mueve el objetivo hacia la izquierda
+				cameraControl.target.z -= moveX;
+				cameraControl.target.x += moveZ;
 			}
 
 			if (Keyboard.shared.isDown("KeyD")) {
-				cameraControl.target.z += moveX; // Mueve el objetivo hacia la derecha
-				cameraControl.target.x -= moveZ; // Mueve el objetivo hacia la derecha
+				cameraControl.target.z += moveX;
+				cameraControl.target.x -= moveZ;
 			}
-		} else {
-			// stopSFX("running");
 		}
 
 		if (Keyboard.shared.isDown("Space")) {
-			cameraControl.target.y += Scene3D.cameraMoveSpeed; // Mueve el objetivo hacia la derecha
-		}
-		if (Keyboard.shared.isDown("Enter")) {
-			if (this.idle) {
-				this.idle = false;
-				// this.firstperson.visible = false;
-				// this.rifle.visible = true;
-			} else {
-				this.idle = true;
-				// this.firstperson.visible = true;
-				// this.rifle.visible = false;
-			}
+			cameraControl.target.y += Scene3D.cameraMoveSpeed;
 		}
 
 		if (Keyboard.shared.isDown("ArrowUp")) {
-			cameraControl.angles.x -= 2;
+			if (this.onCar) {
+				this.impala.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
+			} else {
+				this.cameraControl.angles.x -= 2;
+			}
 		}
 		if (Keyboard.shared.isDown("ArrowLeft")) {
-			cameraControl.angles.y += 2;
-			// myAngle = cameraControl.angles.y += 2
+			if (this.onCar) {
+				this.cameraControl.angles.y += 2;
+				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+			} else {
+				this.cameraControl.angles.y += 2;
+			}
 		}
 		if (Keyboard.shared.isDown("ArrowRight")) {
-			cameraControl.angles.y -= 2;
-			// myAngle = cameraControl.angles.y -= 2
+			if (this.onCar) {
+				this.cameraControl.angles.y -= 2;
+				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+			} else {
+				this.cameraControl.angles.y -= 2;
+			}
 		}
 		if (Keyboard.shared.isDown("ArrowDown")) {
-			cameraControl.angles.x += 2;
+			if (this.onCar) {
+				this.impala.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
+			} else {
+				this.cameraControl.angles.x += 2;
+			}
 		}
 
 		if (Keyboard.shared.isDown("KeyR")) {
-			// cameraControl.target.z += Scene3D.vehiculeSpeed; // Mueve el objetivo hacia abajo
-			this.impala.z += Scene3D.vehiculeSpeed;
+			if (this.onCar) {
+				cameraControl.target.z += moveZ;
+				cameraControl.target.x += moveX;
+				cameraControl.target.y -= moveY;
+
+				this.impala.z += moveZ;
+				this.impala.x += moveX;
+				this.impala.y -= moveY;
+			}
 		}
 		if (Keyboard.shared.isDown("KeyF")) {
-			// cameraControl.target.z -= Scene3D.vehiculeSpeed; // Mueve el objetivo hacia abajo
-			this.impala.z -= Scene3D.vehiculeSpeed;
+			if (this.onCar) {
+				cameraControl.target.z -= moveZ;
+				cameraControl.target.x -= moveX;
+				cameraControl.target.y += moveY;
+
+				this.impala.z -= moveZ;
+				this.impala.x -= moveX;
+				this.impala.y += moveY;
+			}
 		}
 
 		if (Keyboard.shared.isDown("KeyE")) {
-			// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-			this.impala.position.set(this.cameraControl.target.x + 1, this.cameraControl.target.y - 2.7, this.cameraControl.target.z);
-			this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-			this.impala.z += Scene3D.vehiculeSpeed;
+			if (!this.onCar) {
+				this.onCar = true;
+				// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+				this.impala.position.set(this.cameraControl.target.x * Math.sin(angleYRad), this.impala.y, this.cameraControl.target.z * Math.cos(angleYRad));
+				this.impala.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
+			} else {
+				this.onCar = false;
+			}
 		}
 
 		if (Keyboard.shared.justPressed("NumpadSubtract")) {
 			new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
-			// this.firstperson.visible = false;
 		}
 		if (Keyboard.shared.justPressed("NumpadAdd")) {
 			new Tween(this.cameraControl).to({ distance: 0 }, 500).start();
-			// this.firstperson.visible = true;
 		}
 
 		if (Keyboard.shared.isDown("KeyV")) {
-			const zoomAmount = 0.5; // Ajusta la cantidad de zoom según tus necesidades
+			const zoomAmount = 0.5;
 			this.zoomCameraControl.distance -= zoomAmount;
-			// Asegúrate de que la distancia no sea menor que cero o que no zoom demasiado cerca
 			if (this.zoomCameraControl.distance < 0) {
 				this.zoomCameraControl.distance = 0;
 			}
-
-			// Actualiza la posición y la orientación de la primera persona según la cámara de zoom
 			this.firstperson.position.set(this.zoomCameraControl.target.x, this.zoomCameraControl.target.y, this.zoomCameraControl.target.z);
 			this.firstperson.rotationQuaternion.setEulerAngles(this.zoomCameraControl.angles.x, this.zoomCameraControl.angles.y, 0);
 		}

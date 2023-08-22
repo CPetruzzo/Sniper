@@ -11,7 +11,7 @@ import { settings } from "pixi.js";
 import { DEFAULTS } from "tweedle.js";
 import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
-import { Scene3D } from "./Scene3D";
+import { Scene3D } from "./project/scenes/3dgame/Scene3D";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 
 settings.RENDER_OPTIONS.hello = false;
