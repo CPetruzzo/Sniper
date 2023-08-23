@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Assets } from "@pixi/assets";
 import type { CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
-import { Light, LightingEnvironment, Model, LightType, Color, Mesh3D } from "pixi3d/pixi7";
+import { Light, LightingEnvironment, Model, LightType, Color } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { cameraControl } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
@@ -22,17 +23,17 @@ export class Scene3D extends PixiScene {
 	private firstperson: Model;
 	private dragon: Model;
 	private cameraControl: CameraOrbitControl;
-	public zoomCameraControl: CameraOrbitControl;
-	public explanationText: Text = new Text("this is the explanation");
+	public explanationText: Text = new Text("");
 	public onCar: boolean = false;
+	private colliding: boolean = false;
 
 	constructor() {
 		super();
 
+		this.firstperson = Model.from(Assets.get("firstperson"));
 		this.impala = Model.from(Assets.get("impala"));
 		this.road = Model.from(Assets.get("road"));
 		this.hauntedhouse = Model.from(Assets.get("hauntedhouse"));
-		this.firstperson = Model.from(Assets.get("firstperson"));
 		this.dragon = Model.from(Assets.get("dragon"));
 
 		this.firstperson.scale.set(0.03, 0.03, 0.03);
@@ -40,26 +41,36 @@ export class Scene3D extends PixiScene {
 		this.impala.x = 20;
 		this.impala.y = +1;
 		this.impala.scale.set(30, 30, 30);
+		this.impala.eventMode = "static";
 		this.hauntedhouse.x = 50;
 
 		this.addChild(this.impala, this.road, this.hauntedhouse, this.firstperson, this.dragon);
 
 		this.makeDemoText();
 
+		// Crea una luz para simular la linterna (puedes usar point o spot, ajusta según tus necesidades)
+		const flashlight = new Light();
+		flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
+		flashlight.range = 30; // Rango de alcance de la linterna
+		flashlight.color = new Color(1, 1, 0.5); // Color de la luz (amarillo en este ejemplo)
+		flashlight.intensity = 100; // Intensidad de la luz (ajusta según lo necesites)
+
+		// Asigna la posición de la linterna para que coincida con la posición de firstperson
+		flashlight.position.set(this.firstperson.position.x, this.firstperson.position.y, this.firstperson.position.z);
+
+		// Ajusta la rotación de la linterna según la dirección de firstperson si es necesario
+		flashlight.rotationQuaternion.copyFrom(this.firstperson.rotationQuaternion);
+
+		// Agrega la linterna a LightingEnvironment para que afecte a la escena
+		LightingEnvironment.main.lights.push(flashlight);
+
+		// light for background
 		const dirLight = new Light();
 		dirLight.type = LightType.directional;
 		dirLight.intensity = 5;
 		dirLight.color = new Color(1, 1, 1);
 		dirLight.rotationQuaternion.setEulerAngles(45, -75, 0);
 		LightingEnvironment.main.lights.push(dirLight);
-
-		const dirLight2 = new Light();
-		dirLight2.type = LightType.directional;
-		dirLight2.intensity = 5;
-		dirLight2.color = new Color(1, 1, 1);
-		dirLight2.rotationQuaternion.setEulerAngles(45, 75, 0);
-		LightingEnvironment.main.lights.push(dirLight2);
-
 		const dirLight3 = new Light();
 		dirLight3.type = LightType.directional;
 		dirLight3.intensity = 5;
@@ -70,9 +81,6 @@ export class Scene3D extends PixiScene {
 		this.cameraControl = cameraControl;
 		this.cameraControl.distance = 0;
 		(this.cameraControl.target.x = 0), (this.cameraControl.target.y = 2), (this.cameraControl.target.z = 50);
-		this.zoomCameraControl = cameraControl;
-		this.zoomCameraControl.distance = 0;
-		(this.zoomCameraControl.target.x = 0), (this.cameraControl.target.y = 2), (this.cameraControl.target.z = 50);
 
 		this.hauntedhouse.animations[0].loop = true;
 		this.hauntedhouse.animations[0].play();
@@ -82,18 +90,6 @@ export class Scene3D extends PixiScene {
 			mat.exposure = 1.1;
 			mat.roughness = 0.6;
 			mat.metallic = 0;
-		});
-
-		const shinyKnob = Mesh3D.createCylinder();
-		shinyKnob.scale.set(0.01, 0.01, 0.01);
-		shinyKnob.position.set(0.1, 0.02, 0);
-		this.impala.addChild(shinyKnob);
-
-		new Tween(shinyKnob).to({ alpha: 0.2 }, 500).repeat(Infinity).yoyo(true).start();
-
-		shinyKnob.on("pointertap", () => {
-			console.log("knob");
-			this.getInCar();
 		});
 
 		this.dragon.z = -500;
@@ -109,7 +105,7 @@ export class Scene3D extends PixiScene {
 	}
 
 	private getInCar(): void {
-		new Tween(this.cameraControl).to({ x: this.impala.x, y: this.impala.y }, 500).start();
+		new Tween(this.cameraControl).to({ x: this.impala.x, y: this.impala.y + 10, z: this.impala.z }, 500).start();
 	}
 
 	/**
@@ -124,19 +120,33 @@ export class Scene3D extends PixiScene {
 			lineJoin: "round",
 		});
 
-		this.explanationText = new Text(
-			"Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up, \nUse R/F to move car",
-			textStyle
-		);
-		this.addChild(this.explanationText);
+		if (this.onCar) {
+			this.explanationText = new Text(
+				`Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`,
+				textStyle
+			);
+			this.addChild(this.explanationText);
+		} else {
+			this.explanationText = new Text(
+				(this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`),
+				textStyle
+			);
+			this.addChild(this.explanationText);
+		}
 	}
 
+	private updateText(): void {
+		if (this.onCar) {
+			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse R/F to move car`;
+		} else {
+			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`;
+		}
+	}
 	public override update(dt: number): void {
 		super.update(dt);
-
 		this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
 		this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-		this.firstperson.position.y = this.cameraControl.target.y + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
+		this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
 		this.dragon.z += Scene3D.vehiculeSpeed * 3;
 
 		const angleYRad = cameraControl.angles.y * (Math.PI / 180);
@@ -146,15 +156,35 @@ export class Scene3D extends PixiScene {
 		const moveZ = Scene3D.cameraMoveSpeed * Math.cos(angleYRad);
 		if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
 			if (Keyboard.shared.isDown("KeyW")) {
-				cameraControl.target.z += moveZ;
-				cameraControl.target.x += moveX;
-				cameraControl.target.y -= moveY;
+				if (this.onCar) {
+					cameraControl.target.z += moveZ * 2;
+					cameraControl.target.x += moveX * 2;
+					cameraControl.target.y -= moveY * 2;
+
+					this.impala.z += moveZ * 2;
+					this.impala.x += moveX * 2;
+					this.impala.y -= moveY * 2;
+				} else {
+					cameraControl.target.z += moveZ;
+					cameraControl.target.x += moveX;
+					cameraControl.target.y -= moveY;
+				}
 			}
 
 			if (Keyboard.shared.isDown("KeyS")) {
-				cameraControl.target.z -= moveZ;
-				cameraControl.target.x -= moveX;
-				cameraControl.target.y += moveY;
+				if (this.onCar) {
+					cameraControl.target.z -= moveZ * 2;
+					cameraControl.target.x -= moveX * 2;
+					cameraControl.target.y += moveY * 2;
+
+					this.impala.z -= moveZ * 2;
+					this.impala.x -= moveX * 2;
+					this.impala.y += moveY * 2;
+				} else {
+					cameraControl.target.z -= moveZ;
+					cameraControl.target.x -= moveX;
+					cameraControl.target.y += moveY;
+				}
 			}
 
 			if (Keyboard.shared.isDown("KeyA")) {
@@ -226,32 +256,28 @@ export class Scene3D extends PixiScene {
 			}
 		}
 
-		if (Keyboard.shared.isDown("KeyE")) {
+		if (Keyboard.shared.justPressed("KeyE")) {
 			if (!this.onCar) {
 				this.onCar = true;
+				this.getInCar();
 				// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-				this.impala.position.set(this.cameraControl.target.x * Math.sin(angleYRad), this.impala.y, this.cameraControl.target.z * Math.cos(angleYRad));
-				this.impala.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
+				this.impala.position.set(this.cameraControl.target.x, this.impala.y, this.cameraControl.target.z);
+				this.impala.rotationQuaternion.setEulerAngles(10, this.cameraControl.angles.y, 0);
 			} else {
 				this.onCar = false;
 			}
+			this.updateText();
 		}
 
 		if (Keyboard.shared.justPressed("NumpadSubtract")) {
-			new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
+			if (this.onCar) {
+				new Tween(this.cameraControl).to({ distance: 25 }, 500).start();
+			} else {
+				new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
+			}
 		}
 		if (Keyboard.shared.justPressed("NumpadAdd")) {
 			new Tween(this.cameraControl).to({ distance: 0 }, 500).start();
-		}
-
-		if (Keyboard.shared.isDown("KeyV")) {
-			const zoomAmount = 0.5;
-			this.zoomCameraControl.distance -= zoomAmount;
-			if (this.zoomCameraControl.distance < 0) {
-				this.zoomCameraControl.distance = 0;
-			}
-			this.firstperson.position.set(this.zoomCameraControl.target.x, this.zoomCameraControl.target.y, this.zoomCameraControl.target.z);
-			this.firstperson.rotationQuaternion.setEulerAngles(this.zoomCameraControl.angles.x, this.zoomCameraControl.angles.y, 0);
 		}
 	}
 }
