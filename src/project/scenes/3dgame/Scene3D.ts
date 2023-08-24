@@ -122,7 +122,7 @@ export class Scene3D extends PixiScene {
 
 		if (this.onCar) {
 			this.explanationText = new Text(
-				`Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`,
+				`Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \ncamera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`,
 				textStyle
 			);
 			this.addChild(this.explanationText);
@@ -137,9 +137,9 @@ export class Scene3D extends PixiScene {
 
 	private updateText(): void {
 		if (this.onCar) {
-			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse R/F to move car`;
+			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up\ncamera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse R/F to move car`;
 		} else {
-			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`;
+			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \ncamera angle: ${this.cameraControl.angles.x}\nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`;
 		}
 	}
 	public override update(dt: number): void {
@@ -148,6 +148,14 @@ export class Scene3D extends PixiScene {
 		this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
 		this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
 		this.dragon.z += Scene3D.vehiculeSpeed * 3;
+
+		if(this.firstperson.y <= 1){
+			this.colliding = true;
+			this.updateText();
+		} else {
+			this.colliding = false;
+			this.updateText();
+		}
 
 		const angleYRad = cameraControl.angles.y * (Math.PI / 180);
 		const angleXRad = cameraControl.angles.x * (Math.PI / 180);
@@ -188,13 +196,21 @@ export class Scene3D extends PixiScene {
 			}
 
 			if (Keyboard.shared.isDown("KeyA")) {
-				cameraControl.target.z -= moveX;
-				cameraControl.target.x += moveZ;
+				if(!this.onCar) {
+					cameraControl.target.z -= moveX;
+					cameraControl.target.x += moveZ;
+				}
 			}
 
 			if (Keyboard.shared.isDown("KeyD")) {
-				cameraControl.target.z += moveX;
-				cameraControl.target.x -= moveZ;
+				if(!this.onCar) {
+					cameraControl.target.z += moveX;
+					cameraControl.target.x -= moveZ;
+				}
+			}
+
+			if(this.colliding) {
+				this.cameraControl.target.y = 1;
 			}
 		}
 
@@ -203,32 +219,40 @@ export class Scene3D extends PixiScene {
 		}
 
 		if (Keyboard.shared.isDown("ArrowUp")) {
-			if (this.onCar) {
-				this.impala.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
-			} else {
+			if (!this.onCar) {
 				this.cameraControl.angles.x -= 2;
 			}
 		}
 		if (Keyboard.shared.isDown("ArrowLeft")) {
 			if (this.onCar) {
-				this.cameraControl.angles.y += 2;
+				if (Keyboard.shared.isDown("KeyW")) {
+					this.cameraControl.angles.y += 2;
+				}
+				if (Keyboard.shared.isDown("KeyS")) {
+					this.cameraControl.angles.y -= 2;
+				}
 				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+			} else if(this.onCar){
 			} else {
 				this.cameraControl.angles.y += 2;
 			}
 		}
 		if (Keyboard.shared.isDown("ArrowRight")) {
-			if (this.onCar) {
-				this.cameraControl.angles.y -= 2;
-				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+			if (this.onCar){
+				if (Keyboard.shared.isDown("KeyW")) {
+					this.cameraControl.angles.y -= 2;
+				}
+				if (Keyboard.shared.isDown("KeyS")) {
+					this.cameraControl.angles.y += 2;
+				}
+				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);		
+			} else if(this.onCar){
 			} else {
 				this.cameraControl.angles.y -= 2;
 			}
 		}
 		if (Keyboard.shared.isDown("ArrowDown")) {
-			if (this.onCar) {
-				this.impala.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
-			} else {
+			if (!this.onCar) {
 				this.cameraControl.angles.x += 2;
 			}
 		}
@@ -259,10 +283,11 @@ export class Scene3D extends PixiScene {
 		if (Keyboard.shared.justPressed("KeyE")) {
 			if (!this.onCar) {
 				this.onCar = true;
+				this.cameraControl.angles.x = 0;
 				this.getInCar();
-				// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+				this.cameraControl.target.y = this.impala.y + 3; 
 				this.impala.position.set(this.cameraControl.target.x, this.impala.y, this.cameraControl.target.z);
-				this.impala.rotationQuaternion.setEulerAngles(10, this.cameraControl.angles.y, 0);
+				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
 			} else {
 				this.onCar = false;
 			}
@@ -271,13 +296,13 @@ export class Scene3D extends PixiScene {
 
 		if (Keyboard.shared.justPressed("NumpadSubtract")) {
 			if (this.onCar) {
-				new Tween(this.cameraControl).to({ distance: 25 }, 500).start();
+				new Tween(this.cameraControl).to({ distance: 25, y : this.cameraControl.target.y + 10 }, 500).start();
 			} else {
 				new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
 			}
 		}
 		if (Keyboard.shared.justPressed("NumpadAdd")) {
-			new Tween(this.cameraControl).to({ distance: 0 }, 500).start();
+			new Tween(this.cameraControl).to({ distance: 0, y:this.cameraControl.target.y }, 500).start();
 		}
 	}
 }
