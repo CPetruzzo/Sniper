@@ -32,8 +32,8 @@ export class Scene3D extends PixiScene {
 	public explanationText: Text = new Text("");
 	public onCar: boolean = false;
 	private colliding: boolean = false;
-	impalaBox: any;
-	dragonBox: any;
+	public impalaBox: any;
+	public dragonBox: any;
 
 	constructor() {
 		super();
@@ -50,7 +50,6 @@ export class Scene3D extends PixiScene {
 
 		this.dragon = Model.from(Assets.get("dragon"));
 
-		
 		this.firstperson.scale.set(0.03, 0.03, 0.03);
 		this.firstperson.y = 50;
 		this.impala.x = 20;
@@ -58,7 +57,7 @@ export class Scene3D extends PixiScene {
 		this.impala.scale.set(30, 30, 30);
 		this.impala.eventMode = "static";
 		this.hauntedhouse.x = 50;
-		
+
 		const roadsize = 234.5;
 		this.road2.z = roadsize;
 		this.road3.z = roadsize * 2;
@@ -67,21 +66,21 @@ export class Scene3D extends PixiScene {
 		this.road6.z = roadsize * 5;
 
 		this.addChild(this.impala, this.road1, this.road2, this.road3, this.road4, this.road5, this.road6, this.hauntedhouse, this.firstperson, this.dragon);
-		
+
 		this.impalaBox = this.impala.getBoundingBox();
-		console.log('impalaBox', this.impalaBox)
+		console.log("impalaBox", this.impalaBox);
 		this.dragonBox = this.dragon.getBoundingBox();
-		console.log('dragonBox', this.dragonBox)
-		
+		console.log("dragonBox", this.dragonBox);
+
 		this.makeDemoText();
-		
+
 		// Crea una luz para simular la linterna (puedes usar point o spot, ajusta según tus necesidades)
 		const flashlight = new Light();
 		flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
 		flashlight.range = 30; // Rango de alcance de la linterna
 		flashlight.color = new Color(1, 1, 0.5); // Color de la luz (amarillo en este ejemplo)
 		flashlight.intensity = 100; // Intensidad de la luz (ajusta según lo necesites)
-		
+
 		// Asigna la posición de la linterna para que coincida con la posición de firstperson
 		flashlight.position.set(this.firstperson.position.x, this.firstperson.position.y, this.firstperson.position.z);
 
@@ -171,15 +170,8 @@ export class Scene3D extends PixiScene {
 	}
 
 	public intersect(a: AABB, b: AABB): boolean {
-		return (
-		  a.min.x <= b.max.x &&
-		  a.max.x >= b.min.x &&
-		  a.min.y <= b.max.y &&
-		  a.max.y >= b.min.y &&
-		  a.min.z <= b.max.z &&
-		  a.max.z >= b.min.z
-		);
-	  }
+		return a.min.x <= b.max.x && a.max.x >= b.min.x && a.min.y <= b.max.y && a.max.y >= b.min.y && a.min.z <= b.max.z && a.max.z >= b.min.z;
+	}
 	public override update(dt: number): void {
 		super.update(dt);
 
@@ -188,9 +180,7 @@ export class Scene3D extends PixiScene {
 		this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
 		this.dragon.z += Scene3D.dragonSpeed;
 
-
-
-		if(this.firstperson.y <= 1){
+		if (this.firstperson.y <= 1) {
 			this.colliding = true;
 			this.updateText();
 		} else {
@@ -209,7 +199,6 @@ export class Scene3D extends PixiScene {
 		if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
 			if (Keyboard.shared.isDown("KeyW")) {
 				if (this.onCar) {
-
 					cameraControl.target.z += moveCarZ * 2;
 					cameraControl.target.x += moveCarX * 2;
 					cameraControl.target.y -= moveCarY * 2;
@@ -241,20 +230,20 @@ export class Scene3D extends PixiScene {
 			}
 
 			if (Keyboard.shared.isDown("KeyA")) {
-				if(!this.onCar) {
+				if (!this.onCar) {
 					cameraControl.target.z -= moveX;
 					cameraControl.target.x += moveZ;
 				}
 			}
 
 			if (Keyboard.shared.isDown("KeyD")) {
-				if(!this.onCar) {
+				if (!this.onCar) {
 					cameraControl.target.z += moveX;
 					cameraControl.target.x -= moveZ;
 				}
 			}
 
-			if(this.colliding) {
+			if (this.colliding) {
 				this.cameraControl.target.y = 1;
 			}
 		}
@@ -277,21 +266,21 @@ export class Scene3D extends PixiScene {
 					this.cameraControl.angles.y -= 2;
 				}
 				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-			} else if(this.onCar){
+			} else if (this.onCar) {
 			} else {
 				this.cameraControl.angles.y += 2;
 			}
 		}
 		if (Keyboard.shared.isDown("ArrowRight")) {
-			if (this.onCar){
+			if (this.onCar) {
 				if (Keyboard.shared.isDown("KeyW")) {
 					this.cameraControl.angles.y -= 2;
 				}
 				if (Keyboard.shared.isDown("KeyS")) {
 					this.cameraControl.angles.y += 2;
 				}
-				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);		
-			} else if(this.onCar){
+				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+			} else if (this.onCar) {
 			} else {
 				this.cameraControl.angles.y -= 2;
 			}
@@ -304,24 +293,24 @@ export class Scene3D extends PixiScene {
 
 		if (Keyboard.shared.isDown("KeyR")) {
 			if (this.onCar) {
-				cameraControl.target.z += moveZ*2;
-				cameraControl.target.x += moveX*2;
-				cameraControl.target.y -= moveY*2;
+				cameraControl.target.z += moveZ * 2;
+				cameraControl.target.x += moveX * 2;
+				cameraControl.target.y -= moveY * 2;
 
-				this.impala.z += moveZ*2;
-				this.impala.x += moveX*2;
-				this.impala.y -= moveY*2;
+				this.impala.z += moveZ * 2;
+				this.impala.x += moveX * 2;
+				this.impala.y -= moveY * 2;
 			}
 		}
 		if (Keyboard.shared.isDown("KeyF")) {
 			if (this.onCar) {
-				cameraControl.target.z -= moveZ*2;
-				cameraControl.target.x -= moveX*2;
-				cameraControl.target.y += moveY*2;
+				cameraControl.target.z -= moveZ * 2;
+				cameraControl.target.x -= moveX * 2;
+				cameraControl.target.y += moveY * 2;
 
-				this.impala.z -= moveZ*2;
-				this.impala.x -= moveX*2;
-				this.impala.y += moveY*2;
+				this.impala.z -= moveZ * 2;
+				this.impala.x -= moveX * 2;
+				this.impala.y += moveY * 2;
 			}
 		}
 
@@ -330,7 +319,7 @@ export class Scene3D extends PixiScene {
 				this.onCar = true;
 				this.cameraControl.angles.x = 0;
 				this.getInCar();
-				this.cameraControl.target.y = this.impala.y + 3; 
+				this.cameraControl.target.y = this.impala.y + 3;
 				this.impala.position.set(this.cameraControl.target.x, this.impala.y, this.cameraControl.target.z);
 				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
 			} else {
@@ -341,20 +330,20 @@ export class Scene3D extends PixiScene {
 
 		if (Keyboard.shared.justPressed("NumpadSubtract")) {
 			if (this.onCar) {
-				new Tween(this.cameraControl).to({ distance: 25, y : this.cameraControl.target.y + 10 }, 500).start();
+				new Tween(this.cameraControl).to({ distance: 25, y: this.cameraControl.target.y + 10 }, 500).start();
 			} else {
 				new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
 			}
 		}
 		if (Keyboard.shared.justPressed("NumpadAdd")) {
-			new Tween(this.cameraControl).to({ distance: 0, y:this.cameraControl.target.y }, 500).start();
+			new Tween(this.cameraControl).to({ distance: 0, y: this.cameraControl.target.y }, 500).start();
 		}
-		
+
 		this.impalaBox = this.impala.getBoundingBox();
 		this.dragonBox = this.dragon.getBoundingBox();
 
 		const firstpersonBox = this.firstperson.getBoundingBox();
-		const collisionfirstperson = this.intersect(firstpersonBox , this.dragonBox);
+		const collisionfirstperson = this.intersect(firstpersonBox, this.dragonBox);
 		if (collisionfirstperson && !this.colliding) {
 			this.colliding = true;
 			this.updateText();
@@ -363,7 +352,7 @@ export class Scene3D extends PixiScene {
 		const collision = this.intersect(this.dragonBox, this.impalaBox);
 		if (collision && !this.colliding) {
 			this.colliding = true;
-			console.log('this.colliding', this.colliding)
+			console.log("this.colliding", this.colliding);
 			this.updateText();
 		}
 	}

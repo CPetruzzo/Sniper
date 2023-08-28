@@ -1,4 +1,4 @@
-import { Texture } from "pixi.js";
+import type { Texture } from "pixi.js";
 
 export class Terrain {
 	private movementCost: number;
@@ -19,8 +19,7 @@ export class Terrain {
 		return this.isWater;
 	}
 
-	getTexture(): Texture {
-		return this.terrainTexture; 
-	} 
-
+	public getTexture(): Texture {
+		return this.terrainTexture;
+	}
 }
