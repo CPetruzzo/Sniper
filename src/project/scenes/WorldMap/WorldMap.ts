@@ -9,8 +9,8 @@ import { Keyboard } from "../../../engine/input/Keyboard";
 import { InputHandler } from "../../../utils/InputHandler";
 
 export class RandomWorldMap extends PixiScene {
-	private WIDTH: number = 10;
-	private HEIGHT: number = 15;
+	private WIDTH: number = 9;
+	private HEIGHT: number = 6;
 	private tiles_: Terrain[][] = []; // Define the tiles array.
 
 	private grassTerrain_: Terrain = new Terrain(1, false, GRASS_TEXTURE);
@@ -19,6 +19,7 @@ export class RandomWorldMap extends PixiScene {
 
 	private inputHandler: InputHandler;
 	private player: Character;
+	public previousTile: any;
 
 	constructor() {
 		super();
@@ -63,6 +64,7 @@ export class RandomWorldMap extends PixiScene {
 		this.inputHandler = new InputHandler(this.player);
 		// Antes de mover al personaje, establece el terreno actual bajo él
 		const initialTerrain = this.getTile(this.player.x, this.player.y);
+		this.previousTile = initialTerrain;
 		console.log("initialTerrain", initialTerrain.getMovementCost());
 		this.player.setTerrainUnderCharacter(initialTerrain);
 		console.log("this.player.setTerrainUnderCharacter(initialTerrain)", this.player.setTerrainUnderCharacter(initialTerrain));
@@ -83,7 +85,8 @@ export class RandomWorldMap extends PixiScene {
 		}
 
 		const tile = this.getTile(this.player.tileX, this.player.tileY);
-		if (tile) {
+		if (this.previousTile != tile) {
+			this.previousTile = tile;
 			console.log("tile", tile.getMovementCost());
 		}
 	}
