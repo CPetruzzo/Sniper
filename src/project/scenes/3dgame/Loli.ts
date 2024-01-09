@@ -1,6 +1,6 @@
 import type { Resource, Texture } from "pixi.js";
 import type { Point3D } from "pixi3d/pixi7";
-import { Camera, Sprite3D, SpriteBillboardType, Vec3 } from "pixi3d/pixi7";
+import { Camera, Sprite3D, SpriteBillboardType } from "pixi3d/pixi7";
 
 export class Loli extends Sprite3D {
 	private speedX: number;
@@ -25,7 +25,10 @@ export class Loli extends Sprite3D {
 	}
 
 	public distanceFromCamera(): number {
-		return Vec3.distance(this.worldTransform.position, Camera.main.worldTransform.position);
+		const dx = this.worldTransform.position.x - Camera.main.worldTransform.position.x;
+		const dy = this.worldTransform.position.y - Camera.main.worldTransform.position.y;
+		const dz = this.worldTransform.position.z - Camera.main.worldTransform.position.z;
+		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
 	public update(): void {

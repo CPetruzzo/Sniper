@@ -10,9 +10,10 @@ import { Text, TextStyle, Texture } from "pixi.js";
 import { BallGame } from "../BallCollisionGame/BallGame";
 import { Loli } from "./Loli";
 import Random from "../../../engine/random/Random";
+import { ProgressBar } from "@pixi/ui";
 
 export class Scene3D extends PixiScene {
-	public static readonly BUNDLES = ["3d"];
+	public static readonly BUNDLES = ["3d", "package-1"];
 	public static handMovementAmplitude = 0.05;
 	public static handMovementFrequency = 0.005;
 	public static cameraMoveSpeed = 0.2;
@@ -38,6 +39,9 @@ export class Scene3D extends PixiScene {
 	public impalaBox: any;
 	public dragonBox: any;
 	private lolis: Loli[] = [];
+	private hpBar: ProgressBar;
+	// private currentHealth: any;
+	// private maxHealth: any;
 
 	constructor() {
 		super();
@@ -90,6 +94,7 @@ export class Scene3D extends PixiScene {
 		// loli.billboardType = SpriteBillboardType.spherical;
 		for (let i = 0; i < 50; i++) {
 			const loli = new Loli(Texture.from("loli"), 150, new Point3D(1, 1, 1));
+			// loli.zIndex = 0;
 			this.lolis.push(loli);
 			this.addChild(loli);
 		}
@@ -101,6 +106,15 @@ export class Scene3D extends PixiScene {
 
 		this.makeDemoText();
 
+		this.hpBar = new ProgressBar({
+			bg: "barBG",
+			fill: "bar",
+			progress: 100,
+		});
+		this.hpBar.scale.set(0.3);
+		this.hpBar.position.set(0, 320);
+
+		this.addChild(this.hpBar);
 		// Crea una luz para simular la linterna (puedes usar point o spot, ajusta según tus necesidades)
 		const flashlight = new Light();
 		flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
@@ -201,13 +215,30 @@ export class Scene3D extends PixiScene {
 		return a.min.x <= b.max.x && a.max.x >= b.min.x && a.min.y <= b.max.y && a.max.y >= b.min.y && a.min.z <= b.max.z && a.max.z >= b.min.z;
 	}
 
+	private updateHPBar(): void {
+		if (this.hpBar.progress <= 0) {
+			console.log("you lose");
+			Manager.changeScene(BallGame);
+		} else {
+			console.log(this.hpBar.progress);
+		}
+	}
+
 	public override update(dt: number): void {
 		super.update(dt);
+
+		this.updateHPBar();
 
 		this.lolis.forEach((loli) => {
 			const cameraTarget = this.cameraControl.target;
 			loli.update();
 			loli.moveTowards(cameraTarget, Random.shared.random(0.05, 0.08)); // Puedes ajustar la velocidad según sea necesario
+			if (loli.distanceFromCamera() < 2) {
+				// console.log("loli.distanceFromCamera()", loli.distanceFromCamera());
+				if (this.hpBar.progress >= 1) {
+					this.hpBar.progress = this.hpBar.progress - 1;
+				}
+			}
 		});
 		this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
 		this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);

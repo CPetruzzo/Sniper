@@ -1,9 +1,10 @@
 // import type { Point } from "pixi.js";
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Sprite, Text } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import Random from "../../../engine/random/Random";
+import { Scene3D } from "../3dgame/Scene3D";
 
 export class BallGame extends PixiScene {
 	public static readonly BUNDLES: string[] = ["3d"];
@@ -38,9 +39,26 @@ export class BallGame extends PixiScene {
 		this.ball.endFill();
 		this.ball.pivot.set(this.ball.width / 2, this.ball.height / 2);
 		this.ball.position.set(0, this.frame.height / 2);
-		this.frameContainer.addChild(this.ball);
+		// this.frameContainer.addChild(this.ball);
 
 		this.frameContainer.interactive = true;
+
+		const lose = new Text("You Lose");
+		lose.anchor.set(0.5);
+		lose.position.set(this.frame.width / 2, this.frame.height / 2);
+		this.frame.addChild(lose);
+
+		const resetButton = new Graphics();
+		resetButton.beginFill(0x0ffff, 1);
+		resetButton.drawCircle(0, 0, 10);
+		resetButton.endFill();
+		resetButton.pivot.set(resetButton.width / 2, resetButton.height / 2);
+		resetButton.position.set(this.frame.width / 2, this.frame.height / 2 + lose.height);
+		this.frame.addChild(resetButton);
+
+		resetButton.interactive = true;
+
+		resetButton.on("pointertap", () => Manager.changeScene(Scene3D));
 	}
 
 	private shootBall(): void {
