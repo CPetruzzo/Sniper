@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Assets } from "@pixi/assets";
 import type { AABB, CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
-import { Light, LightingEnvironment, Model, LightType, Color } from "pixi3d/pixi7";
+import { Light, LightingEnvironment, Model, LightType, Color, Point3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { cameraControl } from "../../..";
+import { Manager, cameraControl } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Tween } from "tweedle.js";
-import { Text, TextStyle } from "pixi.js";
+import { Text, TextStyle, Texture } from "pixi.js";
+import { BallGame } from "../BallCollisionGame/BallGame";
+import { Loli } from "./Loli";
+import Random from "../../../engine/random/Random";
 
 export class Scene3D extends PixiScene {
 	public static readonly BUNDLES = ["3d"];
@@ -34,12 +37,15 @@ export class Scene3D extends PixiScene {
 	private colliding: boolean = false;
 	public impalaBox: any;
 	public dragonBox: any;
+	private lolis: Loli[] = [];
 
 	constructor() {
 		super();
 
 		this.firstperson = Model.from(Assets.get("firstperson"));
+		this.firstperson.name = "firstperson";
 		this.impala = Model.from(Assets.get("impala"));
+		this.impala.name = "impala";
 		this.road1 = Model.from(Assets.get("road"));
 		this.road2 = Model.from(Assets.get("road"));
 		this.road3 = Model.from(Assets.get("road"));
@@ -47,12 +53,12 @@ export class Scene3D extends PixiScene {
 		this.road5 = Model.from(Assets.get("road"));
 		this.road6 = Model.from(Assets.get("road"));
 		this.hauntedhouse = Model.from(Assets.get("hauntedhouse"));
-
+		this.hauntedhouse.name = "hauntedhouse";
 		this.dragon = Model.from(Assets.get("dragon"));
-
+		this.dragon.name = "dragon";
 		this.firstperson.scale.set(0.03, 0.03, 0.03);
 		this.firstperson.y = 50;
-		this.impala.x = 20;
+		this.impala.x = 60;
 		this.impala.y = +1;
 		this.impala.scale.set(30, 30, 30);
 		this.impala.eventMode = "static";
@@ -65,7 +71,28 @@ export class Scene3D extends PixiScene {
 		this.road5.z = roadsize * 4;
 		this.road6.z = roadsize * 5;
 
-		this.addChild(this.impala, this.road1, this.road2, this.road3, this.road4, this.road5, this.road6, this.hauntedhouse, this.firstperson, this.dragon);
+		this.addChild(
+			this.impala,
+			this.road1,
+			this.road2,
+			this.road3,
+			this.road4,
+			this.road5,
+			this.road6,
+			// this.hauntedhouse,
+			this.firstperson,
+			this.dragon
+		);
+		this.sortableChildren = true;
+		this.hauntedhouse.zIndex = -1;
+
+		// const loli = new Sprite3D(Texture.from("loli"));
+		// loli.billboardType = SpriteBillboardType.spherical;
+		for (let i = 0; i < 50; i++) {
+			const loli = new Loli(Texture.from("loli"), 150, new Point3D(1, 1, 1));
+			this.lolis.push(loli);
+			this.addChild(loli);
+		}
 
 		this.impalaBox = this.impala.getBoundingBox();
 		console.log("impalaBox", this.impalaBox);
@@ -162,19 +189,26 @@ export class Scene3D extends PixiScene {
 	}
 
 	private updateText(): void {
-		if (this.onCar) {
-			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up\ncamera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse R/F to move car faster`;
-		} else {
-			this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \ncamera angle: ${this.cameraControl.angles.x}\nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car`;
-		}
+		const movementInstructions = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up`;
+		const carInstructions = `camera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`;
+		const carControlInstructions = `Use R/F to move car faster`;
+		const generalInstructions = `camera angle: ${this.cameraControl.angles.x}\nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car`;
+
+		this.explanationText.text = this.onCar ? `${movementInstructions}\n${carInstructions}\n${carControlInstructions}` : `${movementInstructions}\n${generalInstructions}`;
 	}
 
 	public intersect(a: AABB, b: AABB): boolean {
 		return a.min.x <= b.max.x && a.max.x >= b.min.x && a.min.y <= b.max.y && a.max.y >= b.min.y && a.min.z <= b.max.z && a.max.z >= b.min.z;
 	}
+
 	public override update(dt: number): void {
 		super.update(dt);
 
+		this.lolis.forEach((loli) => {
+			const cameraTarget = this.cameraControl.target;
+			loli.update();
+			loli.moveTowards(cameraTarget, Random.shared.random(0.05, 0.08)); // Puedes ajustar la velocidad según sea necesario
+		});
 		this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
 		this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
 		this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
@@ -353,6 +387,7 @@ export class Scene3D extends PixiScene {
 		if (collision && !this.colliding) {
 			this.colliding = true;
 			console.log("this.colliding", this.colliding);
+			Manager.changeScene(BallGame);
 			this.updateText();
 		}
 	}

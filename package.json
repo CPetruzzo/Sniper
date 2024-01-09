@@ -51,6 +51,7 @@
     "workbox-webpack-plugin": "6.5.4"
   },
   "dependencies": {
+    "@mapeditor/tiled-api": "^1.10.1",
     "@pixi/particle-emitter": "^5.0.8",
     "@pixi/sound": "5.1.1",
     "@pixi/ui": "^0.7.2",
