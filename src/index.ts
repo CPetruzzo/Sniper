@@ -13,7 +13,6 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { Scene3D } from "./project/scenes/3dgame/Scene3D";
-import { BallGame } from "./project/scenes/BallCollisionGame/BallGame";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -63,7 +62,7 @@ window.dispatchEvent(new Event("resize"));
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(BallGame, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(Scene3D, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
