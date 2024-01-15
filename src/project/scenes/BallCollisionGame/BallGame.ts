@@ -5,9 +5,10 @@ import { Manager } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import Random from "../../../engine/random/Random";
 import { Scene3D } from "../3dgame/Scene3D";
+import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 
 export class BallGame extends PixiScene {
-	public static readonly BUNDLES: string[] = ["3d"];
+	public static readonly BUNDLES: string[] = ["3d", "package-1"];
 	private frameContainer: Container = new Container();
 	private frame: Graphics;
 	private ball: Graphics;
@@ -18,6 +19,7 @@ export class BallGame extends PixiScene {
 	private isShooting: boolean = false;
 	public isInAir: boolean = false;
 	public isPointerDown: boolean = false; // Nueva variable para rastrear si se mantiene presionado el mouse
+	private loli: Sprite;
 
 	constructor() {
 		super();
@@ -33,6 +35,10 @@ export class BallGame extends PixiScene {
 		this.frame.pivot.set(this.frame.width / 2, this.frame.height / 2);
 		this.frameContainer.addChild(this.frame);
 
+		this.loli = Sprite.from("loliLose");
+		this.loli.anchor.set(0.5);
+		this.addChild(this.loli);
+
 		this.ball = new Graphics();
 		this.ball.beginFill(0x0ffff, 1);
 		this.ball.drawCircle(0, 0, 10);
@@ -46,19 +52,19 @@ export class BallGame extends PixiScene {
 		const lose = new Text("You Lose");
 		lose.anchor.set(0.5);
 		lose.position.set(this.frame.width / 2, this.frame.height / 2);
-		this.frame.addChild(lose);
+		// this.loli.addChild(lose);
 
-		const resetButton = new Graphics();
-		resetButton.beginFill(0x0ffff, 1);
-		resetButton.drawCircle(0, 0, 10);
-		resetButton.endFill();
-		resetButton.pivot.set(resetButton.width / 2, resetButton.height / 2);
-		resetButton.position.set(this.frame.width / 2, this.frame.height / 2 + lose.height);
-		this.frame.addChild(resetButton);
+		const resetButton = Sprite.from("loliGameOver");
+		resetButton.anchor.set(0.5);
+		resetButton.y = 362;
+		this.loli.addChild(resetButton);
 
 		resetButton.interactive = true;
 
-		resetButton.on("pointertap", () => Manager.changeScene(Scene3D));
+		resetButton.on("pointertap", () => {
+			resetButton.scale.set(1.1);
+			Manager.changeScene(Scene3D);
+		});
 	}
 
 	private shootBall(): void {
@@ -131,5 +137,11 @@ export class BallGame extends PixiScene {
 			this.isInAir = false;
 			this.ballSpeedY = 0;
 		}
+	}
+
+	public override onResize(newW: number, newH: number): void {
+		ScaleHelper.setScaleRelativeToIdeal(this.loli, newW, newH, 1920, 1080, ScaleHelper.FIT);
+		this.loli.x = newW * 0.5;
+		this.loli.y = newH * 0.5;
 	}
 }

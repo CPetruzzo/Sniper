@@ -6,11 +6,12 @@ import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager, cameraControl } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Tween } from "tweedle.js";
-import { Text, TextStyle, Texture } from "pixi.js";
+import { Container, Graphics, Text, TextStyle, Texture } from "pixi.js";
 import { BallGame } from "../BallCollisionGame/BallGame";
 import { Loli } from "./Loli";
 import Random from "../../../engine/random/Random";
 import { ProgressBar } from "@pixi/ui";
+import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 
 export class Scene3D extends PixiScene {
 	public static readonly BUNDLES = ["3d", "package-1"];
@@ -18,7 +19,7 @@ export class Scene3D extends PixiScene {
 	public static handMovementFrequency = 0.005;
 	public static cameraMoveSpeed = 0.2;
 	public static dragonSpeed = 1.2;
-	public static vehiculeSpeed = 0.4;
+	public static vehiculeSpeed = 0.2;
 	public static cameraRotationSpeed = 0.01;
 	public static GRAVITY = 200;
 
@@ -40,8 +41,15 @@ export class Scene3D extends PixiScene {
 	public dragonBox: any;
 	private lolis: Loli[] = [];
 	private hpBar: ProgressBar;
+	private isPaused: boolean = false;
 	// private currentHealth: any;
 	// private maxHealth: any;
+	// public static loliSlowdownFactor = 0.15; // Puedes ajustar este valor según sea necesario
+	private miniMapContainer = new Container();
+	private miniMapBackground = new Graphics();
+	private miniMapWidth = 300; // Establecer el ancho del minimapa
+	private miniMapHeight = 300; // Establecer la altura del minimapa
+	private cameraIndicator: Graphics; // Agrega esto como propiedad de la clase
 
 	constructor() {
 		super();
@@ -93,7 +101,7 @@ export class Scene3D extends PixiScene {
 		// const loli = new Sprite3D(Texture.from("loli"));
 		// loli.billboardType = SpriteBillboardType.spherical;
 		for (let i = 0; i < 50; i++) {
-			const loli = new Loli(Texture.from("loli"), 150, new Point3D(1, 1, 1));
+			const loli = new Loli(Texture.from("loli"), this.miniMapWidth, new Point3D(5, 5, 5));
 			// loli.zIndex = 0;
 			this.lolis.push(loli);
 			this.addChild(loli);
@@ -169,12 +177,96 @@ export class Scene3D extends PixiScene {
 			mat.roughness = 0.6;
 			mat.metallic = 0;
 		});
+
+		this.miniMapContainer.width = this.miniMapWidth;
+		this.miniMapContainer.height = this.miniMapHeight;
+		this.miniMapContainer.position.set(500, 500); // Ajusta la posición según sea necesario
+		this.miniMapContainer.scale.set(3);
+		this.miniMapContainer.pivot.set();
+		this.addChild(this.miniMapContainer);
+
+		// Agregar fondo del minimapa
+		this.miniMapBackground.beginFill(0xfff, 0.5);
+		this.miniMapBackground.drawRect(0, 0, this.miniMapWidth, this.miniMapHeight);
+		this.miniMapBackground.endFill();
+		this.miniMapBackground.pivot.set(this.miniMapBackground.width / 2, this.miniMapBackground.height / 2);
+		this.miniMapContainer.addChild(this.miniMapBackground);
+
+		// Llama a esta función en el constructor después de crear el fondo del minimapa
+		this.createCameraIndicator();
 	}
 
 	private getInCar(): void {
 		new Tween(this.cameraControl).to({ x: this.impala.x, y: this.impala.y + 10, z: this.impala.z }, 500).start();
 	}
 
+	private updateMiniMapScale(): void {
+		// Obtén la cantidad de objetos en la escena principal
+		const objectCount = this.children.length;
+		console.log("objectCount", objectCount);
+
+		// Define un valor máximo y mínimo para la escala del minimapa
+		const maxScale = 1;
+		const minScale = 1;
+
+		// Calcula la escala del minimapa basada en la densidad de objetos
+		const scale = Math.min(maxScale, minScale + objectCount * 0.1);
+
+		// Aplica la escala al contenedor del minimapa
+		this.miniMapContainer.scale.set(scale);
+	}
+
+	private updateMiniMap(): void {
+		// Limpiar el minimapa antes de actualizarlo
+		this.miniMapContainer.removeChildren();
+
+		// Volver a agregar el fondo del minimapa
+		this.miniMapContainer.addChild(this.miniMapBackground);
+
+		// Agregar marcadores para las lolis y el personaje
+		this.lolis.forEach((loli) => {
+			const loliMarker = new Graphics();
+			loliMarker.beginFill(0xff0000); // Color del marcador de loli
+			loliMarker.drawCircle(loli.x, loli.z, 2);
+			loliMarker.endFill();
+			this.miniMapContainer.addChild(loliMarker);
+		});
+
+		// Agregar el marcador del personaje (cámara)
+		const playerMarker = new Graphics();
+		playerMarker.beginFill(0x00ff00); // Color del marcador del personaje
+		playerMarker.drawCircle(
+			this.cameraControl.target.x * (this.miniMapContainer.width / this.width),
+			this.cameraControl.target.z * (this.miniMapContainer.height / this.height),
+			4
+		);
+		playerMarker.endFill();
+		this.miniMapContainer.addChild(playerMarker);
+
+		this.addMiniMapMarker(this.dragon, 0x0000ff); // Marcador azul para el dragón
+
+		// Agregar marcador para el auto (impala)
+		this.addMiniMapMarker(this.impala, 0xffff00); // Marcador amarillo para el auto
+
+		this.createCameraIndicator();
+	}
+
+	/**
+	 * Agrega un marcador al minimapa para un objeto dado.
+	 * @param object El objeto para el cual se agregará el marcador.
+	 * @param color El color del marcador.
+	 */
+	private addMiniMapMarker(object: Container | Point3D | any, color: number): void {
+		const marker = new Graphics();
+		marker.beginFill(color);
+		marker.drawCircle(
+			object instanceof Point3D ? object.x * (this.miniMapContainer.width / this.width) : object.x * (this.miniMapContainer.width / this.width),
+			object instanceof Point3D ? object.z * (this.miniMapContainer.height / this.height) : object.z * (this.miniMapContainer.height / this.height),
+			4
+		);
+		marker.endFill();
+		this.miniMapContainer.addChild(marker);
+	}
 	/**
 	 * Method to make the text explaining the demo. Nothing to see here.
 	 */
@@ -224,202 +316,264 @@ export class Scene3D extends PixiScene {
 		}
 	}
 
+	private pauseOnOff(): void {
+		this.isPaused = !this.isPaused;
+		console.log("this.isPaused", this.isPaused);
+	}
+
+	private createCameraIndicator(): void {
+		// Crea el indicador de la cámara (puedes personalizar esto según tus preferencias)
+		this.cameraIndicator = new Graphics();
+		this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
+		this.cameraIndicator.moveTo(0, 0);
+		this.cameraIndicator.lineTo(20, 0); // Longitud del indicador
+		this.miniMapContainer.addChild(this.cameraIndicator);
+	}
+
+	private updateCameraIndicator(): void {
+		const rotationSpeed = -Math.PI / 180; // Experimenta con diferentes valores
+
+		// Actualiza la posición y rotación del indicador según la dirección de la cámara
+		const cameraDirection = new Point3D(1, 1, 1); // Dirección inicial
+
+		// Normaliza la dirección para asegurarse de que la línea tenga la longitud correcta
+		cameraDirection.normalize();
+
+		// Establece la posición y rotación del indicador en el minimapa
+		const indicatorX = this.cameraControl.target.x * (this.miniMapContainer.width / this.width);
+		const indicatorZ = this.cameraControl.target.z * (this.miniMapContainer.height / this.height);
+		const indicatorLength = 30; // Longitud del indicador en el minimapa
+
+		// Calcula las coordenadas finales del indicador con ajuste de velocidad
+		const indicatorEndX = indicatorX + cameraDirection.x * Math.cos(this.cameraControl.angles.y * rotationSpeed + Math.PI / 2) * indicatorLength;
+		const indicatorEndZ = indicatorZ + cameraDirection.z * Math.sin(this.cameraControl.angles.y * rotationSpeed + Math.PI / 2) * indicatorLength;
+
+		console.log("Indicator Coordinates:", indicatorX, indicatorZ);
+		console.log("Indicator End Coordinates:", indicatorEndX, indicatorEndZ);
+
+		this.cameraIndicator.clear();
+		this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
+		this.cameraIndicator.moveTo(indicatorX, indicatorZ);
+		this.cameraIndicator.lineTo(indicatorEndX, indicatorEndZ);
+	}
+
 	public override update(dt: number): void {
-		super.update(dt);
-
-		this.updateHPBar();
-
-		this.lolis.forEach((loli) => {
-			const cameraTarget = this.cameraControl.target;
-			loli.update();
-			loli.moveTowards(cameraTarget, Random.shared.random(0.05, 0.08)); // Puedes ajustar la velocidad según sea necesario
-			if (loli.distanceFromCamera() < 2) {
-				// console.log("loli.distanceFromCamera()", loli.distanceFromCamera());
-				if (this.hpBar.progress >= 1) {
-					this.hpBar.progress = this.hpBar.progress - 1;
-				}
-			}
-		});
-		this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
-		this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-		this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
-		this.dragon.z += Scene3D.dragonSpeed;
-
-		if (this.firstperson.y <= 1) {
-			this.colliding = true;
-			this.updateText();
+		if (Keyboard.shared.justPressed("KeyP")) {
+			this.pauseOnOff();
+		}
+		if (this.isPaused) {
+			return;
 		} else {
-			this.colliding = false;
-			this.updateText();
-		}
+			super.update(dt);
 
-		const angleYRad = cameraControl.angles.y * (Math.PI / 180);
-		const angleXRad = cameraControl.angles.x * (Math.PI / 180);
-		const moveCarX = Scene3D.vehiculeSpeed * Math.sin(angleYRad);
-		const moveCarY = Scene3D.vehiculeSpeed * Math.sin(angleXRad);
-		const moveCarZ = Scene3D.vehiculeSpeed * Math.cos(angleYRad);
-		const moveX = Scene3D.vehiculeSpeed * Math.sin(angleYRad);
-		const moveY = Scene3D.vehiculeSpeed * Math.sin(angleXRad);
-		const moveZ = Scene3D.vehiculeSpeed * Math.cos(angleYRad);
-		if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
-			if (Keyboard.shared.isDown("KeyW")) {
-				if (this.onCar) {
-					cameraControl.target.z += moveCarZ * 2;
-					cameraControl.target.x += moveCarX * 2;
-					cameraControl.target.y -= moveCarY * 2;
+			this.updateHPBar();
 
-					this.impala.z += moveCarZ * 2;
-					this.impala.x += moveCarX * 2;
-					this.impala.y -= moveCarY * 2;
-				} else {
-					cameraControl.target.z += moveZ;
-					cameraControl.target.x += moveX;
-					cameraControl.target.y -= moveY;
+			this.lolis.forEach((loli) => {
+				const cameraTarget = this.cameraControl.target;
+				loli.update();
+				loli.moveTowards(cameraTarget, Random.shared.random(0.05, 0.08)); // Puedes ajustar la velocidad según sea necesario
+				if (loli.distanceFromCamera() <= 2) {
+					console.log("loli.distanceFromCamera()", loli.distanceFromCamera());
+					if (this.hpBar.progress >= 1) {
+						// Scene3D.vehiculeSpeed *= Scene3D.loliSlowdownFactor;
+						console.log("Scene3D.vehiculeSpeed", Scene3D.vehiculeSpeed);
+						// Reduce la barra de progreso y disminuye la velocidad si te alcanza la loli
+						this.hpBar.progress = this.hpBar.progress - 1;
+						navigator.vibrate([100, 100, 500, 100, 100]);
+					}
 				}
+			});
+			this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
+			this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+			this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
+			this.dragon.z += Scene3D.dragonSpeed;
+
+			if (this.firstperson.y <= 1) {
+				this.colliding = true;
+				this.updateText();
+			} else {
+				this.colliding = false;
+				this.updateText();
 			}
 
-			if (Keyboard.shared.isDown("KeyS")) {
-				if (this.onCar) {
-					cameraControl.target.z -= moveCarZ * 2;
-					cameraControl.target.x -= moveCarX * 2;
-					cameraControl.target.y += moveCarY * 2;
-
-					this.impala.z -= moveCarZ * 2;
-					this.impala.x -= moveCarX * 2;
-					this.impala.y += moveCarY * 2;
-				} else {
-					cameraControl.target.z -= moveZ;
-					cameraControl.target.x -= moveX;
-					cameraControl.target.y += moveY;
-				}
-			}
-
-			if (Keyboard.shared.isDown("KeyA")) {
-				if (!this.onCar) {
-					cameraControl.target.z -= moveX;
-					cameraControl.target.x += moveZ;
-				}
-			}
-
-			if (Keyboard.shared.isDown("KeyD")) {
-				if (!this.onCar) {
-					cameraControl.target.z += moveX;
-					cameraControl.target.x -= moveZ;
-				}
-			}
-
-			if (this.colliding) {
-				this.cameraControl.target.y = 1;
-			}
-		}
-
-		if (Keyboard.shared.isDown("Space")) {
-			cameraControl.target.y += Scene3D.cameraMoveSpeed;
-		}
-
-		if (Keyboard.shared.isDown("ArrowUp")) {
-			if (!this.onCar) {
-				this.cameraControl.angles.x -= 2;
-			}
-		}
-		if (Keyboard.shared.isDown("ArrowLeft")) {
-			if (this.onCar) {
+			const angleYRad = cameraControl.angles.y * (Math.PI / 180);
+			const angleXRad = cameraControl.angles.x * (Math.PI / 180);
+			const moveCarX = Scene3D.vehiculeSpeed * Math.sin(angleYRad);
+			const moveCarY = Scene3D.vehiculeSpeed * Math.sin(angleXRad);
+			const moveCarZ = Scene3D.vehiculeSpeed * Math.cos(angleYRad);
+			const moveX = Scene3D.vehiculeSpeed * Math.sin(angleYRad);
+			const moveY = Scene3D.vehiculeSpeed * Math.sin(angleXRad);
+			const moveZ = Scene3D.vehiculeSpeed * Math.cos(angleYRad);
+			if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
 				if (Keyboard.shared.isDown("KeyW")) {
+					if (this.onCar) {
+						cameraControl.target.z += moveCarZ * 2;
+						cameraControl.target.x += moveCarX * 2;
+						cameraControl.target.y -= moveCarY * 2;
+
+						this.impala.z += moveCarZ * 2;
+						this.impala.x += moveCarX * 2;
+						this.impala.y -= moveCarY * 2;
+					} else {
+						cameraControl.target.z += moveZ;
+						cameraControl.target.x += moveX;
+						cameraControl.target.y -= moveY;
+					}
+				}
+
+				if (Keyboard.shared.isDown("KeyS")) {
+					if (this.onCar) {
+						cameraControl.target.z -= moveCarZ * 2;
+						cameraControl.target.x -= moveCarX * 2;
+						cameraControl.target.y += moveCarY * 2;
+
+						this.impala.z -= moveCarZ * 2;
+						this.impala.x -= moveCarX * 2;
+						this.impala.y += moveCarY * 2;
+					} else {
+						cameraControl.target.z -= moveZ;
+						cameraControl.target.x -= moveX;
+						cameraControl.target.y += moveY;
+					}
+				}
+
+				if (Keyboard.shared.isDown("KeyA")) {
+					if (!this.onCar) {
+						cameraControl.target.z -= moveX;
+						cameraControl.target.x += moveZ;
+					}
+				}
+
+				if (Keyboard.shared.isDown("KeyD")) {
+					if (!this.onCar) {
+						cameraControl.target.z += moveX;
+						cameraControl.target.x -= moveZ;
+					}
+				}
+
+				if (this.colliding) {
+					this.cameraControl.target.y = 1;
+				}
+			}
+
+			if (Keyboard.shared.isDown("Space")) {
+				cameraControl.target.y += Scene3D.cameraMoveSpeed;
+			}
+
+			if (Keyboard.shared.isDown("ArrowUp")) {
+				if (!this.onCar) {
+					this.cameraControl.angles.x -= 2;
+				}
+			}
+			if (Keyboard.shared.isDown("ArrowLeft")) {
+				if (this.onCar) {
+					if (Keyboard.shared.isDown("KeyW")) {
+						this.cameraControl.angles.y += 2;
+					}
+					if (Keyboard.shared.isDown("KeyS")) {
+						this.cameraControl.angles.y -= 2;
+					}
+					this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+				} else if (this.onCar) {
+				} else {
 					this.cameraControl.angles.y += 2;
 				}
-				if (Keyboard.shared.isDown("KeyS")) {
+			}
+			if (Keyboard.shared.isDown("ArrowRight")) {
+				if (this.onCar) {
+					if (Keyboard.shared.isDown("KeyW")) {
+						this.cameraControl.angles.y -= 2;
+					}
+					if (Keyboard.shared.isDown("KeyS")) {
+						this.cameraControl.angles.y += 2;
+					}
+					this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+				} else if (this.onCar) {
+				} else {
 					this.cameraControl.angles.y -= 2;
 				}
-				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-			} else if (this.onCar) {
-			} else {
-				this.cameraControl.angles.y += 2;
 			}
-		}
-		if (Keyboard.shared.isDown("ArrowRight")) {
-			if (this.onCar) {
-				if (Keyboard.shared.isDown("KeyW")) {
-					this.cameraControl.angles.y -= 2;
+			if (Keyboard.shared.isDown("ArrowDown")) {
+				if (!this.onCar) {
+					this.cameraControl.angles.x += 2;
 				}
-				if (Keyboard.shared.isDown("KeyS")) {
-					this.cameraControl.angles.y += 2;
+			}
+
+			if (Keyboard.shared.isDown("KeyR")) {
+				if (this.onCar) {
+					cameraControl.target.z += moveZ * 2;
+					cameraControl.target.x += moveX * 2;
+					cameraControl.target.y -= moveY * 2;
+
+					this.impala.z += moveZ * 2;
+					this.impala.x += moveX * 2;
+					this.impala.y -= moveY * 2;
 				}
-				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-			} else if (this.onCar) {
-			} else {
-				this.cameraControl.angles.y -= 2;
+			}
+			if (Keyboard.shared.isDown("KeyF")) {
+				if (this.onCar) {
+					cameraControl.target.z -= moveZ * 2;
+					cameraControl.target.x -= moveX * 2;
+					cameraControl.target.y += moveY * 2;
+
+					this.impala.z -= moveZ * 2;
+					this.impala.x -= moveX * 2;
+					this.impala.y += moveY * 2;
+				}
+			}
+
+			if (Keyboard.shared.justPressed("KeyE")) {
+				if (!this.onCar) {
+					this.onCar = true;
+					this.cameraControl.angles.x = 0;
+					this.getInCar();
+					this.cameraControl.target.y = this.impala.y + 3;
+					this.impala.position.set(this.cameraControl.target.x, this.impala.y, this.cameraControl.target.z);
+					this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
+				} else {
+					this.onCar = false;
+				}
+				this.updateText();
+			}
+
+			if (Keyboard.shared.justPressed("NumpadSubtract")) {
+				if (this.onCar) {
+					new Tween(this.cameraControl).to({ distance: 25, y: this.cameraControl.target.y + 10 }, 500).start();
+				} else {
+					new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
+				}
+			}
+			if (Keyboard.shared.justPressed("NumpadAdd")) {
+				new Tween(this.cameraControl).to({ distance: 0, y: this.cameraControl.target.y }, 500).start();
+			}
+
+			this.impalaBox = this.impala.getBoundingBox();
+			this.dragonBox = this.dragon.getBoundingBox();
+
+			const firstpersonBox = this.firstperson.getBoundingBox();
+			const collisionfirstperson = this.intersect(firstpersonBox, this.dragonBox);
+			if (collisionfirstperson && !this.colliding) {
+				this.colliding = true;
+				this.updateText();
+			}
+
+			const collision = this.intersect(this.dragonBox, this.impalaBox);
+			if (collision && !this.colliding) {
+				this.colliding = true;
+				console.log("this.colliding", this.colliding);
+				Manager.changeScene(BallGame);
+				this.updateText();
 			}
 		}
-		if (Keyboard.shared.isDown("ArrowDown")) {
-			if (!this.onCar) {
-				this.cameraControl.angles.x += 2;
-			}
-		}
 
-		if (Keyboard.shared.isDown("KeyR")) {
-			if (this.onCar) {
-				cameraControl.target.z += moveZ * 2;
-				cameraControl.target.x += moveX * 2;
-				cameraControl.target.y -= moveY * 2;
+		this.updateMiniMapScale();
+		this.updateMiniMap();
+		this.updateCameraIndicator();
+	}
 
-				this.impala.z += moveZ * 2;
-				this.impala.x += moveX * 2;
-				this.impala.y -= moveY * 2;
-			}
-		}
-		if (Keyboard.shared.isDown("KeyF")) {
-			if (this.onCar) {
-				cameraControl.target.z -= moveZ * 2;
-				cameraControl.target.x -= moveX * 2;
-				cameraControl.target.y += moveY * 2;
-
-				this.impala.z -= moveZ * 2;
-				this.impala.x -= moveX * 2;
-				this.impala.y += moveY * 2;
-			}
-		}
-
-		if (Keyboard.shared.justPressed("KeyE")) {
-			if (!this.onCar) {
-				this.onCar = true;
-				this.cameraControl.angles.x = 0;
-				this.getInCar();
-				this.cameraControl.target.y = this.impala.y + 3;
-				this.impala.position.set(this.cameraControl.target.x, this.impala.y, this.cameraControl.target.z);
-				this.impala.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-			} else {
-				this.onCar = false;
-			}
-			this.updateText();
-		}
-
-		if (Keyboard.shared.justPressed("NumpadSubtract")) {
-			if (this.onCar) {
-				new Tween(this.cameraControl).to({ distance: 25, y: this.cameraControl.target.y + 10 }, 500).start();
-			} else {
-				new Tween(this.cameraControl).to({ distance: 5 }, 500).start();
-			}
-		}
-		if (Keyboard.shared.justPressed("NumpadAdd")) {
-			new Tween(this.cameraControl).to({ distance: 0, y: this.cameraControl.target.y }, 500).start();
-		}
-
-		this.impalaBox = this.impala.getBoundingBox();
-		this.dragonBox = this.dragon.getBoundingBox();
-
-		const firstpersonBox = this.firstperson.getBoundingBox();
-		const collisionfirstperson = this.intersect(firstpersonBox, this.dragonBox);
-		if (collisionfirstperson && !this.colliding) {
-			this.colliding = true;
-			this.updateText();
-		}
-
-		const collision = this.intersect(this.dragonBox, this.impalaBox);
-		if (collision && !this.colliding) {
-			this.colliding = true;
-			console.log("this.colliding", this.colliding);
-			Manager.changeScene(BallGame);
-			this.updateText();
-		}
+	public override onResize(newW: number, newH: number): void {
+		ScaleHelper.setScaleRelativeToIdeal(this.miniMapContainer, newW, newH, 1920, 1080, ScaleHelper.FIT);
+		this.miniMapContainer.x = newW * 0.8;
+		this.miniMapContainer.y = newH * 0.2;
 	}
 }

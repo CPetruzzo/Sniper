@@ -6,6 +6,7 @@ export class Loli extends Sprite3D {
 	private speedX: number;
 	private speedY: number;
 	private speedZ: number;
+
 	constructor(texture: Texture<Resource> | undefined, areaSize: number, scale?: Point3D) {
 		super(texture);
 
@@ -59,14 +60,12 @@ export class Loli extends Sprite3D {
 
 		const distance = Math.sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ);
 
-		// Normalize the direction vector
 		const normalizedDirection = {
 			x: directionX / distance,
 			y: directionY / distance,
 			z: directionZ / distance,
 		};
 
-		// Move towards the target
 		this.position.x += normalizedDirection.x * speed;
 		this.position.y += normalizedDirection.y * speed;
 		this.position.z += normalizedDirection.z * speed;

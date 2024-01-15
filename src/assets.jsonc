@@ -77,7 +77,10 @@
 				"big_background": "./img/big_placeholder/bg_game.png",
 				"mask_demo": "./img/big_placeholder/mask_demo@0.5x.png", // @0.5x means 50% of the original size, pixi will internally upscale and you will never know!
 				"bar": "./img/bar.png",
-				"barBG": "./img/bgBar.png"
+				"barBG": "./img/bgBar.png",
+				"loliLose": "./models/LOLI.png",
+				"loliGameOver": "./models/LOLIGAMEOVER.png"
+
 			}
 		},
 		{
