@@ -67,7 +67,8 @@
 		{
 			"name": "music",
 			"assets": {
-				"music": "./music/musical.mp3"
+				"music": "./music/musical.mp3",
+				"haunting": "./music/hauntingloli.mp3"
 			}
 		},
 		{
@@ -79,6 +80,7 @@
 				"bar": "./img/bar.png",
 				"barBG": "./img/bgBar.png",
 				"loliLose": "./models/LOLI.png",
+				"PLAY": "./models/PLAY.jpg",
 				"loliGameOver": "./models/LOLIGAMEOVER.png"
 
 			}

@@ -7,22 +7,17 @@ import { Manager, cameraControl } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Tween } from "tweedle.js";
 import { Container, Graphics, Text, TextStyle, Texture } from "pixi.js";
-import { BallGame } from "../BallCollisionGame/BallGame";
+import { LoseScene } from "../BallCollisionGame/LoseScene";
 import { Loli } from "./Loli";
 import Random from "../../../engine/random/Random";
 import { ProgressBar } from "@pixi/ui";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { CAMERA_MOVE_SPEED, DRAGON_SPEED, HAND_MOVEMENT_AMPLITUDE, HAND_MOVEMENT_FREQUENCY, MINIMAP_HEIGHT, MINIMAP_WIDTH, VEHICULE_SPEED } from "../../../utils/constants";
 
 export class Scene3D extends PixiScene {
 	public static readonly BUNDLES = ["3d", "package-1"];
-	public static handMovementAmplitude = 0.05;
-	public static handMovementFrequency = 0.005;
-	public static cameraMoveSpeed = 0.2;
-	public static dragonSpeed = 1.2;
-	public static vehiculeSpeed = 0.2;
-	public static cameraRotationSpeed = 0.01;
-	public static GRAVITY = 200;
 
+	// Models
 	private impala: Model;
 	private road1: Model;
 	private road2: Model;
@@ -33,23 +28,25 @@ export class Scene3D extends PixiScene {
 	private hauntedhouse: Model;
 	private firstperson: Model;
 	private dragon: Model;
-	private cameraControl: CameraOrbitControl;
-	public explanationText: Text = new Text("");
-	public onCar: boolean = false;
-	private colliding: boolean = false;
+	
+	// hitboxs
 	public impalaBox: any;
 	public dragonBox: any;
+
+	private cameraControl: CameraOrbitControl;
+	public explanationText: Text = new Text("");
 	private lolis: Loli[] = [];
 	private hpBar: ProgressBar;
+
+	// flags
+	public onCar: boolean = false;
+	private colliding: boolean = false;
 	private isPaused: boolean = false;
-	// private currentHealth: any;
-	// private maxHealth: any;
-	// public static loliSlowdownFactor = 0.15; // Puedes ajustar este valor según sea necesario
+	
+	// minimap
 	private miniMapContainer = new Container();
 	private miniMapBackground = new Graphics();
-	private miniMapWidth = 300; // Establecer el ancho del minimapa
-	private miniMapHeight = 300; // Establecer la altura del minimapa
-	private cameraIndicator: Graphics; // Agrega esto como propiedad de la clase
+	public cameraIndicator: Graphics;
 
 	constructor() {
 		super();
@@ -101,7 +98,7 @@ export class Scene3D extends PixiScene {
 		// const loli = new Sprite3D(Texture.from("loli"));
 		// loli.billboardType = SpriteBillboardType.spherical;
 		for (let i = 0; i < 50; i++) {
-			const loli = new Loli(Texture.from("loli"), this.miniMapWidth, new Point3D(5, 5, 5));
+			const loli = new Loli(Texture.from("loli"), MINIMAP_WIDTH, new Point3D(5, 5, 5));
 			// loli.zIndex = 0;
 			this.lolis.push(loli);
 			this.addChild(loli);
@@ -123,6 +120,7 @@ export class Scene3D extends PixiScene {
 		this.hpBar.position.set(0, 320);
 
 		this.addChild(this.hpBar);
+	
 		// Crea una luz para simular la linterna (puedes usar point o spot, ajusta según tus necesidades)
 		const flashlight = new Light();
 		flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
@@ -178,8 +176,8 @@ export class Scene3D extends PixiScene {
 			mat.metallic = 0;
 		});
 
-		this.miniMapContainer.width = this.miniMapWidth;
-		this.miniMapContainer.height = this.miniMapHeight;
+		this.miniMapContainer.width = MINIMAP_WIDTH;
+		this.miniMapContainer.height = MINIMAP_HEIGHT;
 		this.miniMapContainer.position.set(500, 500); // Ajusta la posición según sea necesario
 		this.miniMapContainer.scale.set(3);
 		this.miniMapContainer.pivot.set();
@@ -187,13 +185,13 @@ export class Scene3D extends PixiScene {
 
 		// Agregar fondo del minimapa
 		this.miniMapBackground.beginFill(0xfff, 0.5);
-		this.miniMapBackground.drawRect(0, 0, this.miniMapWidth, this.miniMapHeight);
+		this.miniMapBackground.drawRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
 		this.miniMapBackground.endFill();
 		this.miniMapBackground.pivot.set(this.miniMapBackground.width / 2, this.miniMapBackground.height / 2);
 		this.miniMapContainer.addChild(this.miniMapBackground);
 
 		// Llama a esta función en el constructor después de crear el fondo del minimapa
-		this.createCameraIndicator();
+		// this.createCameraIndicator();
 	}
 
 	private getInCar(): void {
@@ -216,13 +214,14 @@ export class Scene3D extends PixiScene {
 		this.miniMapContainer.scale.set(scale);
 	}
 
+
 	private updateMiniMap(): void {
 		// Limpiar el minimapa antes de actualizarlo
 		this.miniMapContainer.removeChildren();
-
+	
 		// Volver a agregar el fondo del minimapa
 		this.miniMapContainer.addChild(this.miniMapBackground);
-
+	
 		// Agregar marcadores para las lolis y el personaje
 		this.lolis.forEach((loli) => {
 			const loliMarker = new Graphics();
@@ -231,24 +230,14 @@ export class Scene3D extends PixiScene {
 			loliMarker.endFill();
 			this.miniMapContainer.addChild(loliMarker);
 		});
-
+	
+		// Agregar marcador para el dragon
+		this.addMiniMapMarker(this.dragon, 0x0000ff); // Marcador de dragon en azul
+	
+		// Agregar marcador para el impala (auto)
+		this.addMiniMapMarker(this.impala, 0xffff00); // Marcador de impala en amarillo
 		// Agregar el marcador del personaje (cámara)
-		const playerMarker = new Graphics();
-		playerMarker.beginFill(0x00ff00); // Color del marcador del personaje
-		playerMarker.drawCircle(
-			this.cameraControl.target.x * (this.miniMapContainer.width / this.width),
-			this.cameraControl.target.z * (this.miniMapContainer.height / this.height),
-			4
-		);
-		playerMarker.endFill();
-		this.miniMapContainer.addChild(playerMarker);
-
-		this.addMiniMapMarker(this.dragon, 0x0000ff); // Marcador azul para el dragón
-
-		// Agregar marcador para el auto (impala)
-		this.addMiniMapMarker(this.impala, 0xffff00); // Marcador amarillo para el auto
-
-		this.createCameraIndicator();
+		this.addMiniMapMarker(this.cameraControl.target, 0x00ff00); // Marcador de personaje en verde
 	}
 
 	/**
@@ -258,15 +247,23 @@ export class Scene3D extends PixiScene {
 	 */
 	private addMiniMapMarker(object: Container | Point3D | any, color: number): void {
 		const marker = new Graphics();
-		marker.beginFill(color);
-		marker.drawCircle(
-			object instanceof Point3D ? object.x * (this.miniMapContainer.width / this.width) : object.x * (this.miniMapContainer.width / this.width),
-			object instanceof Point3D ? object.z * (this.miniMapContainer.height / this.height) : object.z * (this.miniMapContainer.height / this.height),
-			4
+		const objectX = object.x * (this.miniMapContainer.width / this.width);
+		const objectY = object.z * (this.miniMapContainer.height / this.height);
+	
+		// Verificar si el objeto está dentro de los límites del fondo del minimapa
+		const isInsideBounds = (
+			objectX >= -this.miniMapBackground.width / 2 && objectX <= this.miniMapBackground.width / 2 &&
+			objectY >= -this.miniMapBackground.height / 2 && objectY <= this.miniMapBackground.height / 2
 		);
-		marker.endFill();
-		this.miniMapContainer.addChild(marker);
+	
+		if (isInsideBounds) {
+			marker.beginFill(color);
+			marker.drawCircle(objectX, objectY, 4);
+			marker.endFill();
+			this.miniMapContainer.addChild(marker);
+		}
 	}
+	
 	/**
 	 * Method to make the text explaining the demo. Nothing to see here.
 	 */
@@ -310,7 +307,7 @@ export class Scene3D extends PixiScene {
 	private updateHPBar(): void {
 		if (this.hpBar.progress <= 0) {
 			console.log("you lose");
-			Manager.changeScene(BallGame);
+			Manager.changeScene(LoseScene);
 		} else {
 			console.log(this.hpBar.progress);
 		}
@@ -321,7 +318,7 @@ export class Scene3D extends PixiScene {
 		console.log("this.isPaused", this.isPaused);
 	}
 
-	private createCameraIndicator(): void {
+	public createCameraIndicator(): void {
 		// Crea el indicador de la cámara (puedes personalizar esto según tus preferencias)
 		this.cameraIndicator = new Graphics();
 		this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
@@ -330,7 +327,7 @@ export class Scene3D extends PixiScene {
 		this.miniMapContainer.addChild(this.cameraIndicator);
 	}
 
-	private updateCameraIndicator(): void {
+	public updateCameraIndicator(): void {
 		const rotationSpeed = -Math.PI / 180; // Experimenta con diferentes valores
 
 		// Actualiza la posición y rotación del indicador según la dirección de la cámara
@@ -351,10 +348,10 @@ export class Scene3D extends PixiScene {
 		console.log("Indicator Coordinates:", indicatorX, indicatorZ);
 		console.log("Indicator End Coordinates:", indicatorEndX, indicatorEndZ);
 
-		this.cameraIndicator.clear();
-		this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
-		this.cameraIndicator.moveTo(indicatorX, indicatorZ);
-		this.cameraIndicator.lineTo(indicatorEndX, indicatorEndZ);
+		// this.cameraIndicator.clear();
+		// this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
+		// this.cameraIndicator.moveTo(indicatorX, indicatorZ);
+		// this.cameraIndicator.lineTo(indicatorEndX, indicatorEndZ);
 	}
 
 	public override update(dt: number): void {
@@ -376,7 +373,7 @@ export class Scene3D extends PixiScene {
 					console.log("loli.distanceFromCamera()", loli.distanceFromCamera());
 					if (this.hpBar.progress >= 1) {
 						// Scene3D.vehiculeSpeed *= Scene3D.loliSlowdownFactor;
-						console.log("Scene3D.vehiculeSpeed", Scene3D.vehiculeSpeed);
+						console.log("Scene3D.vehiculeSpeed", VEHICULE_SPEED);
 						// Reduce la barra de progreso y disminuye la velocidad si te alcanza la loli
 						this.hpBar.progress = this.hpBar.progress - 1;
 						navigator.vibrate([100, 100, 500, 100, 100]);
@@ -385,8 +382,8 @@ export class Scene3D extends PixiScene {
 			});
 			this.firstperson.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
 			this.firstperson.rotationQuaternion.setEulerAngles(this.cameraControl.angles.x, this.cameraControl.angles.y, 0);
-			this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * Scene3D.handMovementFrequency) * Scene3D.handMovementAmplitude;
-			this.dragon.z += Scene3D.dragonSpeed;
+			this.firstperson.position.y = this.cameraControl.target.y - 0.2 + Math.cos(performance.now() * HAND_MOVEMENT_FREQUENCY) * HAND_MOVEMENT_AMPLITUDE;
+			this.dragon.z += DRAGON_SPEED;
 
 			if (this.firstperson.y <= 1) {
 				this.colliding = true;
@@ -398,12 +395,12 @@ export class Scene3D extends PixiScene {
 
 			const angleYRad = cameraControl.angles.y * (Math.PI / 180);
 			const angleXRad = cameraControl.angles.x * (Math.PI / 180);
-			const moveCarX = Scene3D.vehiculeSpeed * Math.sin(angleYRad);
-			const moveCarY = Scene3D.vehiculeSpeed * Math.sin(angleXRad);
-			const moveCarZ = Scene3D.vehiculeSpeed * Math.cos(angleYRad);
-			const moveX = Scene3D.vehiculeSpeed * Math.sin(angleYRad);
-			const moveY = Scene3D.vehiculeSpeed * Math.sin(angleXRad);
-			const moveZ = Scene3D.vehiculeSpeed * Math.cos(angleYRad);
+			const moveCarX = VEHICULE_SPEED * Math.sin(angleYRad);
+			const moveCarY = VEHICULE_SPEED * Math.sin(angleXRad);
+			const moveCarZ = VEHICULE_SPEED * Math.cos(angleYRad);
+			const moveX = VEHICULE_SPEED * Math.sin(angleYRad);
+			const moveY = VEHICULE_SPEED * Math.sin(angleXRad);
+			const moveZ = VEHICULE_SPEED * Math.cos(angleYRad);
 			if (Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD")) {
 				if (Keyboard.shared.isDown("KeyW")) {
 					if (this.onCar) {
@@ -457,7 +454,7 @@ export class Scene3D extends PixiScene {
 			}
 
 			if (Keyboard.shared.isDown("Space")) {
-				cameraControl.target.y += Scene3D.cameraMoveSpeed;
+				cameraControl.target.y += CAMERA_MOVE_SPEED;
 			}
 
 			if (Keyboard.shared.isDown("ArrowUp")) {
@@ -550,6 +547,7 @@ export class Scene3D extends PixiScene {
 			this.impalaBox = this.impala.getBoundingBox();
 			this.dragonBox = this.dragon.getBoundingBox();
 
+			this.impalaBox
 			const firstpersonBox = this.firstperson.getBoundingBox();
 			const collisionfirstperson = this.intersect(firstpersonBox, this.dragonBox);
 			if (collisionfirstperson && !this.colliding) {
@@ -561,14 +559,14 @@ export class Scene3D extends PixiScene {
 			if (collision && !this.colliding) {
 				this.colliding = true;
 				console.log("this.colliding", this.colliding);
-				Manager.changeScene(BallGame);
+				Manager.changeScene(LoseScene);
 				this.updateText();
 			}
 		}
 
 		this.updateMiniMapScale();
 		this.updateMiniMap();
-		this.updateCameraIndicator();
+		// this.updateCameraIndicator();
 	}
 
 	public override onResize(newW: number, newH: number): void {
