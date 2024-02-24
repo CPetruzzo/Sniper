@@ -13,7 +13,10 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 // import { Scene3D } from "./project/scenes/3dgame/Scene3D";
-import { LoseScene } from "./project/scenes/BallCollisionGame/LoseScene";
+// import { LoseScene } from "./project/scenes/BallCollisionGame/LoseScene";
+// import { RandomWorldMap } from "./project/scenes/WorldMap/WorldMap";
+import { JoystickEmits } from "./utils/Joystick";
+import { LDTKMapScene } from "./project/scenes/LDTKScene/LDTKMapScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -42,6 +45,18 @@ forceFocus();
 export const Manager = new SceneManager(new PixiRenderer(pixiSettings));
 export const cameraControl = new CameraOrbitControl(pixiSettings.view);
 
+if (navigator.userAgent.includes("Mobile")) {
+	DataManager.setValue(JoystickEmits.MOBILE, true);
+	console.log("Estás accediendo desde un dispositivo móvil.");
+} else {
+	DataManager.setValue(JoystickEmits.MOBILE, false);
+	console.log("Estás accediendo desde una computadora.");
+}
+DataManager.save();
+
+export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
+
+
 DataManager.initialize(new ForagePersistanceProvider(), SAVEDATA_VERSION);
 DataManager.load();
 
@@ -63,7 +78,7 @@ window.dispatchEvent(new Event("resize"));
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(LoseScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

@@ -81,8 +81,8 @@
 				"barBG": "./img/bgBar.png",
 				"loliLose": "./models/LOLI.png",
 				"PLAY": "./models/PLAY.jpg",
-				"loliGameOver": "./models/LOLIGAMEOVER.png"
-
+				"loliGameOver": "./models/LOLIGAMEOVER.png",
+				"LDTK_IMG": "./img/TopDown_by_deepnight.png"
 			}
 		},
 		{

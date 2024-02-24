@@ -16,7 +16,8 @@
     "start:release": "webpack serve --config webpack.config.prod.js",
     "lint": "eslint src/**/*.ts --fix",
     "clean": "rimraf ./dist",
-    "check": "tsc --noEmit --skipLibCheck -p tsconfig.json"
+    "check": "tsc --noEmit --skipLibCheck -p tsconfig.json",
+    "generateMap": "node ./.tools/CreateJsons.js"
   },
   "languages": [
     "en",
