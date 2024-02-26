@@ -61,6 +61,8 @@ export const BREAK_REAPPEAR_TIME = 2000;
 
 // change this to change level from ldtk
 export const CURRENT_LEVEL: number = 0;
+export const PLAYER_WALK_SPEED: number = 0.05;
+export const LEVEL_SCALE: number = 3.5;
 
 
 
