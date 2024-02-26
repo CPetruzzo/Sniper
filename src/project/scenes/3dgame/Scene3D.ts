@@ -28,7 +28,7 @@ export class Scene3D extends PixiScene {
 	private hauntedhouse: Model;
 	private firstperson: Model;
 	private dragon: Model;
-	
+
 	// hitboxs
 	public impalaBox: any;
 	public dragonBox: any;
@@ -42,7 +42,7 @@ export class Scene3D extends PixiScene {
 	public onCar: boolean = false;
 	private colliding: boolean = false;
 	private isPaused: boolean = false;
-	
+
 	// minimap
 	private miniMapContainer = new Container();
 	private miniMapBackground = new Graphics();
@@ -120,7 +120,7 @@ export class Scene3D extends PixiScene {
 		this.hpBar.position.set(0, 320);
 
 		this.addChild(this.hpBar);
-	
+
 		// Crea una luz para simular la linterna (puedes usar point o spot, ajusta según tus necesidades)
 		const flashlight = new Light();
 		flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
@@ -214,14 +214,13 @@ export class Scene3D extends PixiScene {
 		this.miniMapContainer.scale.set(scale);
 	}
 
-
 	private updateMiniMap(): void {
 		// Limpiar el minimapa antes de actualizarlo
 		this.miniMapContainer.removeChildren();
-	
+
 		// Volver a agregar el fondo del minimapa
 		this.miniMapContainer.addChild(this.miniMapBackground);
-	
+
 		// Agregar marcadores para las lolis y el personaje
 		this.lolis.forEach((loli) => {
 			const loliMarker = new Graphics();
@@ -230,10 +229,10 @@ export class Scene3D extends PixiScene {
 			loliMarker.endFill();
 			this.miniMapContainer.addChild(loliMarker);
 		});
-	
+
 		// Agregar marcador para el dragon
 		this.addMiniMapMarker(this.dragon, 0x0000ff); // Marcador de dragon en azul
-	
+
 		// Agregar marcador para el impala (auto)
 		this.addMiniMapMarker(this.impala, 0xffff00); // Marcador de impala en amarillo
 		// Agregar el marcador del personaje (cámara)
@@ -249,13 +248,14 @@ export class Scene3D extends PixiScene {
 		const marker = new Graphics();
 		const objectX = object.x * (this.miniMapContainer.width / this.width);
 		const objectY = object.z * (this.miniMapContainer.height / this.height);
-	
+
 		// Verificar si el objeto está dentro de los límites del fondo del minimapa
-		const isInsideBounds = (
-			objectX >= -this.miniMapBackground.width / 2 && objectX <= this.miniMapBackground.width / 2 &&
-			objectY >= -this.miniMapBackground.height / 2 && objectY <= this.miniMapBackground.height / 2
-		);
-	
+		const isInsideBounds =
+			objectX >= -this.miniMapBackground.width / 2 &&
+			objectX <= this.miniMapBackground.width / 2 &&
+			objectY >= -this.miniMapBackground.height / 2 &&
+			objectY <= this.miniMapBackground.height / 2;
+
 		if (isInsideBounds) {
 			marker.beginFill(color);
 			marker.drawCircle(objectX, objectY, 4);
@@ -263,7 +263,7 @@ export class Scene3D extends PixiScene {
 			this.miniMapContainer.addChild(marker);
 		}
 	}
-	
+
 	/**
 	 * Method to make the text explaining the demo. Nothing to see here.
 	 */
@@ -547,7 +547,7 @@ export class Scene3D extends PixiScene {
 			this.impalaBox = this.impala.getBoundingBox();
 			this.dragonBox = this.dragon.getBoundingBox();
 
-			this.impalaBox
+			this.impalaBox;
 			const firstpersonBox = this.firstperson.getBoundingBox();
 			const collisionfirstperson = this.intersect(firstpersonBox, this.dragonBox);
 			if (collisionfirstperson && !this.colliding) {

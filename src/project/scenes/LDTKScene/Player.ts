@@ -1,7 +1,10 @@
-import { Sprite } from "pixi.js";
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+import { Sprite, Texture } from "pixi.js";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { PhysicsContainer } from "../../../utils/PhysicsContainer";
 import { PLAYER_WALK_SPEED } from "../../../utils/constants";
+import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
 
 export interface FieldDef {
 	identifier: string;
@@ -30,7 +33,7 @@ export interface FieldDef {
 	max: number;
 	regex: any;
 	acceptFileTypes: any;
-	defaultOverride: { id: string, params: any[] };
+	defaultOverride: { id: string; params: any[] };
 	textLanguageMode: any;
 	symmetricalRef: boolean;
 	autoChainRef: boolean;
@@ -66,7 +69,7 @@ export interface PlayerData {
 	showName: boolean;
 	tilesetId: number;
 	tileRenderMode: string;
-	tileRect: { tilesetUid: number, x: number, y: number, w: number, h: number };
+	tileRect: { tilesetUid: number; x: number; y: number; w: number; h: number };
 	uiTileRect: any;
 	nineSliceBorders: any[];
 	maxCount: number;
@@ -80,14 +83,34 @@ export interface PlayerData {
 export class Player extends PhysicsContainer {
 	public data: PlayerData;
 	public playerImg: Sprite;
+	public playerAnim: StateMachineAnimator;
 	constructor(data: PlayerData) {
 		super();
 		this.data = data;
 
+		const idleTextureArray = [];
+		for (let i = 1; i < 3; i++) {
+			const texture = Texture.from(`./img/JuanIdle${i}.png`);
+			idleTextureArray.push(texture);
+		}
+		const atkTextureArray = [];
+		for (let i = 1; i < 3; i++) {
+			const texture = Texture.from(`./img/JuanAtk${i}.png`);
+			atkTextureArray.push(texture);
+		}
+		this.playerAnim = new StateMachineAnimator(true);
+		this.playerAnim.scale.set(0.1);
+		this.playerAnim.anchor.set(0.5);
+		this.playerAnim.addState("idle", idleTextureArray, 2);
+		this.playerAnim.addState("atk", atkTextureArray, 2);
+		this.playerAnim.playState("idle");
+
 		this.playerImg = Sprite.from("./img/cheers1.png");
-		this.playerImg.scale.set(0.05);
-		this.playerImg.anchor.set(0.5);
+		this.playerImg.scale.set(0.02);
+		this.playerImg.alpha = 0;
+		this.pivot.set(this.playerImg.width / 2, this.playerImg.height / 2);
 		this.addChild(this.playerImg);
+		this.addChild(this.playerAnim);
 	}
 
 	public playerUpdate(dt: number): void {
@@ -95,64 +118,81 @@ export class Player extends PhysicsContainer {
 		this.handleMovement();
 	}
 
+	/** movement function */
 	private handleMovement(): void {
-
-		// Reiniciar velocidad
-		this.speed.x = 0;
-		this.speed.y = 0;
+		this.stopMovement();
 
 		// Moverse a la izquierda
 		if (Keyboard.shared.isDown("KeyA")) {
 			this.speed.x = -PLAYER_WALK_SPEED;
-			// console.log('this.speed.x', this.speed.x)
+			this.playerAnim.playState("idle");
 		}
 		// Moverse hacia abajo
 		if (Keyboard.shared.isDown("KeyS")) {
 			this.speed.y = PLAYER_WALK_SPEED;
-			// console.log('this.speed.y', this.speed.y)
+			this.playerAnim.playState("idle");
 		}
 		// Moverse hacia arriba
 		if (Keyboard.shared.isDown("KeyW")) {
 			this.speed.y = -PLAYER_WALK_SPEED;
-			// console.log('this.speed.y', this.speed.y)
+			this.playerAnim.playState("idle");
 		}
 		// Moverse a la derecha
 		if (Keyboard.shared.isDown("KeyD")) {
 			this.speed.x = PLAYER_WALK_SPEED;
-			// console.log('this.speed.x', this.speed.x)
+			this.playerAnim.playState("idle");
+		}
+
+		if (Keyboard.shared.isDown("KeyJ")) {
+			this.playerAnim.playState("atk");
 		}
 	}
 
-	public detectCollision(collisions: any[]): boolean {
+	/** detection of player with collisions array (from TileMap collision tiles) */
+	public detectCollision(collisions: any[], _allowCollide?: boolean): boolean {
+		const playerBounds = this.playerImg.getBounds();
+		const playerLeft = playerBounds.x;
+		const playerRight = playerBounds.x + playerBounds.width;
+		const playerTop = playerBounds.y;
+		const playerBottom = playerBounds.y + playerBounds.height;
+
 		let collisionDetected = false;
 
 		for (const collisionSprite of collisions) {
 			const collisionBounds = collisionSprite.getBounds();
-			const playerBounds = this.playerImg.getBounds();
+			const collisionLeft = collisionBounds.x;
+			const collisionRight = collisionBounds.x + collisionBounds.width;
+			const collisionTop = collisionBounds.y;
+			const collisionBottom = collisionBounds.y + collisionBounds.height;
 
-			if (
-				playerBounds.x < collisionBounds.x + collisionBounds.width &&
-				playerBounds.x + playerBounds.width > collisionBounds.x &&
-				playerBounds.y < collisionBounds.y + collisionBounds.height &&
-				playerBounds.y + playerBounds.height > collisionBounds.y
-			) {
+			const intersectX = playerRight > collisionLeft && playerLeft < collisionRight;
+			const intersectY = playerBottom > collisionTop && playerTop < collisionBottom;
 
-				// Calcular la dirección de ajuste basándose en la posición relativa del jugador y el objeto de colisión
-				const adjustX = playerBounds.x < collisionBounds.x ? -1 : 1;
-				const adjustY = playerBounds.y < collisionBounds.y ? -1 : 1;
+			if (!_allowCollide) {
+				// console.log("_allowCollide", _allowCollide);
+				if (intersectX && intersectY) {
+					// Hay colisión en ambos ejes, determinar en qué dirección es más grande la intersección
+					const overlapX = Math.min(playerRight, collisionRight) - Math.max(playerLeft, collisionLeft);
+					const overlapY = Math.min(playerBottom, collisionBottom) - Math.max(playerTop, collisionTop);
 
-				// Mover ligeramente al jugador fuera del objeto de colisión
-				this.playerImg.x += adjustX * 2;
-				this.playerImg.y += adjustY * 2;
+					if (overlapX < overlapY) {
+						// La intersección es mayor en el eje X
+						const adjustX = playerRight < collisionRight ? -overlapX : overlapX;
+						this.x += adjustX;
+					} else {
+						// La intersección es mayor en el eje Y
+						const adjustY = playerBottom < collisionBottom ? -overlapY : overlapY;
+						this.y += adjustY;
+					}
 
-				collisionDetected = true;
-				break; // Salir del bucle tan pronto como se detecte una colisión
+					collisionDetected = true;
+					break;
+				}
 			}
 		}
 
 		return collisionDetected;
 	}
-
 
 	public stopMovement(): void {
 		// Reiniciar la velocidad del jugador

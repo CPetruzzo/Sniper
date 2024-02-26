@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Item } from "../project/scenes/LDTKScene/Item";
 import { Player } from "../project/scenes/LDTKScene/Player";
 

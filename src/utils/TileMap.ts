@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/naming-convention */
 import { Container } from "@pixi/display";
 import { Sprite } from "@pixi/sprite";
 import type { BaseTexture } from "@pixi/core";
@@ -55,26 +57,21 @@ export class Map extends Container {
 		}
 
 		const capasEnOrden = [
-			'Default_floor',
-			'Custom_floor',
-			'Collisions',
-			'Wall_tops',
-			// 'Entities'
+			"Custom_floor",
+			"Default_floor",
+			"Collisions",
+			"Wall_tops",
+			// 'Entities' // they are added in LevelCreator with EntitiesCreator
 		];
 
+		const defaultFloorTiles: { x: number; y: number }[] = [];
+
 		for (const capaId of capasEnOrden) {
-			const layer = level.layerInstances.find((layer: { __identifier: string; }) => layer.__identifier === capaId);
+			const layer = level.layerInstances.find((layer: { __identifier: string }) => layer.__identifier === capaId);
 			if (layer) {
 				if (layer.__identifier === "Wall_tops") {
 					for (const autoLayerTile of layer.autoLayerTiles) {
-						const tileTexture = GetTileTexture(
-							baseTexture,
-							autoLayerTile.src[0],
-							autoLayerTile.src[1],
-							tileSize,
-							tileSize
-						);
-
+						const tileTexture = GetTileTexture(baseTexture, autoLayerTile.src[0], autoLayerTile.src[1], tileSize, tileSize);
 						const tile = Sprite.from(tileTexture);
 						tile.x = autoLayerTile.px[0];
 						tile.y = autoLayerTile.px[1] - 16;
@@ -82,49 +79,55 @@ export class Map extends Container {
 					}
 				} else {
 					for (const autoLayerTile of layer.autoLayerTiles) {
-						const tileTexture = GetTileTexture(
-							baseTexture,
-							autoLayerTile.src[0],
-							autoLayerTile.src[1],
-							tileSize,
-							tileSize
-						);
+						const tileTexture = GetTileTexture(baseTexture, autoLayerTile.src[0], autoLayerTile.src[1], tileSize, tileSize);
 
 						const tile = Sprite.from(tileTexture);
 						tile.x = autoLayerTile.px[0];
 						tile.y = autoLayerTile.px[1];
 						this.addChild(tile);
+						switch (layer.__identifier) {
+							case "Collisions":
+								tile.name = "Collisions";
+								// tile.tint = 0x0fff;
+								this.collisions.push(tile);
+								break;
+							case "Wall_tops":
+								tile.name = "Wall_tops";
+								break;
+							case "Default_floor":
+								tile.name = "Default_floor";
+								defaultFloorTiles.push({ x: tile.x, y: tile.y }); // save positions to delete later collisions
+								break;
+							case "Custom_floor":
+								tile.name = "Custom_floor";
+								console.log("tile", tile);
+								break;
+							default:
+								tile.name = `Other layer, ${layer.__identifier}`;
+								break;
+						}
 					}
 				}
 			}
 		}
 
-		const collisionLayer = level.layerInstances.find((layer: { __identifier: string; }) => layer.__identifier === 'Collisions');
+		// Filtrar las colisiones que no estén superpuestas con los pisos predeterminados
+		this.collisions = this.collisions.filter((collisionTile) => {
+			for (const defaultFloorTile of defaultFloorTiles) {
+				if (Math.abs(collisionTile.x - defaultFloorTile.x) <= 1 && collisionTile.y === defaultFloorTile.y) {
+					// Tintar las colisiones superpuestas con los pisos predeterminados de rojo
+					// collisionTile.tint = 0xff0000;
+					return false; // No mantener la colisión si está superpuesta con un piso predeterminado
+				}
+			}
+			return true; // Mantener la colisión si no está superpuesta con ningún piso predeterminado
+		});
 
-		const entitiesLayer = level.layerInstances.find((layer: { __identifier: string; }) => layer.__identifier === 'Entities');
+		const entitiesLayer = level.layerInstances.find((layer: { __identifier: string }) => layer.__identifier === "Entities");
 		entitiesLayer.entityInstances.forEach((element: any) => {
 			this.entitiesNames.push(element.__identifier);
 		});
 		const player = entitiesLayer.entityInstances[encontrarIndice(this.entitiesNames, "Player")];
 		console.log(player);
-
-		if (collisionLayer) {
-			for (const autoLayerTile of collisionLayer.autoLayerTiles) {
-				const tileTexture = GetTileTexture(
-					baseTexture,
-					autoLayerTile.src[0],
-					autoLayerTile.src[1],
-					tileSize,
-					tileSize
-				);
-				const tile = Sprite.from(tileTexture);
-				tile.tint = 0x0ffff;
-				tile.name = "collision";
-				tile.x = autoLayerTile.px[0];
-				tile.y = autoLayerTile.px[1];
-				this.collisions.push(tile);
-				// console.log('this.collisions', this.collisions);
-			}
-		}
 	}
 }

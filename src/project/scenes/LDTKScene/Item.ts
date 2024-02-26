@@ -1,6 +1,6 @@
-import { Sprite } from "pixi.js";
+import { Rectangle, Sprite } from "pixi.js";
 import { PhysicsContainer } from "../../../utils/PhysicsContainer";
-import { FieldDef } from "./Player";
+import type { FieldDef } from "./Player";
 
 export interface ItemData {
 	identifier: string;
@@ -28,7 +28,7 @@ export interface ItemData {
 	showName: boolean;
 	tilesetId: number;
 	tileRenderMode: string;
-	tileRect: { tilesetUid: number, x: number, y: number, w: number, h: number };
+	tileRect: { tilesetUid: number; x: number; y: number; w: number; h: number };
 	uiTileRect: any;
 	nineSliceBorders: any[];
 	maxCount: number;
@@ -51,7 +51,9 @@ export class Item extends PhysicsContainer {
 		this.addChild(itemImg);
 	}
 
-	public itemUpdate(): void {
+	public getHitBox(): Rectangle {
+		return new Rectangle(this.x, this.y, this.width, this.height);
 	}
-}
 
+	// public itemUpdate(): void { }
+}

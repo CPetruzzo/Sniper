@@ -18,8 +18,6 @@ export class LevelCreator extends Container {
 		this.mapa.makeMap(BaseTexture.from("./img/TopDown_by_deepnight.png"), 16, lvlNmbr);
 		// this.mapa.pivot.set(this.mapa.width / 2, this.mapa.height / 2);
 		this.levelEntities = new EntitiesCreator(this.mapData);
-		this.addChild(this.mapa,
-			this.levelEntities
-		);
+		this.addChild(this.mapa, this.levelEntities);
 	}
 }

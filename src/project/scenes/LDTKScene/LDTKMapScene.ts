@@ -5,10 +5,10 @@ import { levelData } from "../../../utils/LevelData";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { CURRENT_LEVEL, LEVEL_SCALE } from "../../../utils/constants";
 import { encontrarIndice } from "../../../utils/EntityType";
-import { Player } from "./Player";
+import type { Player } from "./Player";
+import { Item } from "./Item";
 
 export class LDTKMapScene extends PixiScene {
-
 	public static readonly BUNDLES = ["package-1"];
 
 	private world: Container = new Container();
@@ -24,15 +24,37 @@ export class LDTKMapScene extends PixiScene {
 	public override update(dt: number): void {
 		if (this.level.levelEntities) {
 			const playerIndex = encontrarIndice(this.level.levelEntities.dataName, "Player");
+
+			// const itemIndex = encontrarIndice(this.level.levelEntities.dataName, "Item");
+
 			if (playerIndex !== -1) {
 				const player: Player = this.level.levelEntities.entities[playerIndex];
 				player.playerUpdate(dt);
 
-				// Obtener las colisiones detectadas
 				const collisions = this.level.mapa.collisions;
 
-				// Verificar si hay colisión y detener el movimiento si es necesario
-				if (player.detectCollision(collisions)) {
+				for (const item of this.level.levelEntities.entities) {
+					if (item instanceof Item) {
+						switch (item.data.fieldInstances[0].__value) {
+							case "Health":
+								player.detectCollision([item], true);
+								break;
+							case "KeyA":
+								player.detectCollision([item], true);
+
+								if (player.detectCollision([item])) {
+									item.visible = false;
+								}
+								// Lógica para interactuar con la llave A
+								break;
+							default:
+								// Lógica por defecto para otros tipos de objetos
+								break;
+						}
+					}
+				}
+
+				if (player.detectCollision(collisions, false)) {
 					player.stopMovement();
 				}
 			}
@@ -43,6 +65,5 @@ export class LDTKMapScene extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.world, _newW * LEVEL_SCALE, _newH * LEVEL_SCALE, 1920, 1080, ScaleHelper.FILL);
 		this.world.x = 0;
 		this.world.y = 0;
-
 	}
 }

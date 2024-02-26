@@ -56,7 +56,6 @@ DataManager.save();
 
 export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
 
-
 DataManager.initialize(new ForagePersistanceProvider(), SAVEDATA_VERSION);
 DataManager.load();
 
