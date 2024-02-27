@@ -73,14 +73,23 @@ export class Map extends Container {
 					for (const autoLayerTile of layer.autoLayerTiles) {
 						const tileTexture = GetTileTexture(baseTexture, autoLayerTile.src[0], autoLayerTile.src[1], tileSize, tileSize);
 						const tile = Sprite.from(tileTexture);
+						tile.name = "Wall_tops";
 						tile.x = autoLayerTile.px[0];
-						tile.y = autoLayerTile.px[1] - 16;
+						tile.y = autoLayerTile.px[1] + layer.__pxTotalOffsetY;
+
+						if (autoLayerTile.f === 1) {
+							tile.scale.x = -1;
+							tile.x = tile.x + 16
+						}
+
+						if (autoLayerTile.a) {
+							tile.alpha = autoLayerTile.a;
+						}
 						this.addChild(tile);
 					}
 				} else {
 					for (const autoLayerTile of layer.autoLayerTiles) {
 						const tileTexture = GetTileTexture(baseTexture, autoLayerTile.src[0], autoLayerTile.src[1], tileSize, tileSize);
-
 						const tile = Sprite.from(tileTexture);
 						tile.x = autoLayerTile.px[0];
 						tile.y = autoLayerTile.px[1];
@@ -88,15 +97,16 @@ export class Map extends Container {
 						switch (layer.__identifier) {
 							case "Collisions":
 								tile.name = "Collisions";
-								// tile.tint = 0x0fff;
 								this.collisions.push(tile);
+
 								break;
 							case "Wall_tops":
 								tile.name = "Wall_tops";
 								break;
 							case "Default_floor":
 								tile.name = "Default_floor";
-								defaultFloorTiles.push({ x: tile.x, y: tile.y }); // save positions to delete later collisions
+
+								defaultFloorTiles.push({ x: tile.x, y: tile.y });
 								break;
 							case "Custom_floor":
 								tile.name = "Custom_floor";
@@ -115,12 +125,10 @@ export class Map extends Container {
 		this.collisions = this.collisions.filter((collisionTile) => {
 			for (const defaultFloorTile of defaultFloorTiles) {
 				if (Math.abs(collisionTile.x - defaultFloorTile.x) <= 1 && collisionTile.y === defaultFloorTile.y) {
-					// Tintar las colisiones superpuestas con los pisos predeterminados de rojo
-					// collisionTile.tint = 0xff0000;
-					return false; // No mantener la colisión si está superpuesta con un piso predeterminado
+					return false;
 				}
 			}
-			return true; // Mantener la colisión si no está superpuesta con ningún piso predeterminado
+			return true;
 		});
 
 		const entitiesLayer = level.layerInstances.find((layer: { __identifier: string }) => layer.__identifier === "Entities");

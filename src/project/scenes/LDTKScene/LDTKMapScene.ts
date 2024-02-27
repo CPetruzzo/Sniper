@@ -24,7 +24,6 @@ export class LDTKMapScene extends PixiScene {
 	public override update(dt: number): void {
 		if (this.level.levelEntities) {
 			const playerIndex = encontrarIndice(this.level.levelEntities.dataName, "Player");
-
 			// const itemIndex = encontrarIndice(this.level.levelEntities.dataName, "Item");
 
 			if (playerIndex !== -1) {
@@ -38,12 +37,20 @@ export class LDTKMapScene extends PixiScene {
 						switch (item.data.fieldInstances[0].__value) {
 							case "Health":
 								player.detectCollision([item], true);
+								if (player.detectCollision([item])) {
+									// lo remuevo, falta hacer algo antes
+									// console.log('item.parent', item.parent) // quien es el papa?
+									this.level.levelEntities.removeChild(item)
+									console.log(`agarre el ${item.data.fieldInstances[0].__value}`)
+								}
 								break;
 							case "KeyA":
 								player.detectCollision([item], true);
-
 								if (player.detectCollision([item])) {
-									item.visible = false;
+									// lo remuevo, falta hacer algo antes
+									// console.log('item.parent', item.parent) // quien es el papa?
+									this.level.levelEntities.removeChild(item)
+									console.log(`agarre el ${item.data.fieldInstances[0].__value}`)
 								}
 								// Lógica para interactuar con la llave A
 								break;

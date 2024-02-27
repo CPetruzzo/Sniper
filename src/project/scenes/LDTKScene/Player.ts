@@ -100,15 +100,18 @@ export class Player extends PhysicsContainer {
 		}
 		this.playerAnim = new StateMachineAnimator(true);
 		this.playerAnim.scale.set(0.1);
-		this.playerAnim.anchor.set(0.5);
-		this.playerAnim.addState("idle", idleTextureArray, 2);
-		this.playerAnim.addState("atk", atkTextureArray, 2);
+		this.playerAnim.anchor.set(0.63, 0.6);
+		this.playerAnim.addState("idle", idleTextureArray, 20);
+		this.playerAnim.addState("atk", atkTextureArray, 20);
 		this.playerAnim.playState("idle");
 
 		this.playerImg = Sprite.from("./img/cheers1.png");
 		this.playerImg.scale.set(0.02);
-		this.playerImg.alpha = 0;
-		this.pivot.set(this.playerImg.width / 2, this.playerImg.height / 2);
+		this.playerImg.anchor.set(0.5)
+		// this.playerImg.alpha = 0;
+		this.playerImg.x = this.playerAnim.x;
+		this.playerImg.y = this.playerAnim.y;
+		this.pivot.set(this.playerAnim.x, this.playerAnim.y);
 		this.addChild(this.playerImg);
 		this.addChild(this.playerAnim);
 	}
@@ -116,37 +119,50 @@ export class Player extends PhysicsContainer {
 	public playerUpdate(dt: number): void {
 		super.update(dt);
 		this.handleMovement();
+		this.playerAnim.update(dt);
 	}
 
 	/** movement function */
 	private handleMovement(): void {
 		this.stopMovement();
 
+		let moving = false; // Variable para verificar si el jugador se está moviendo
+
 		// Moverse a la izquierda
 		if (Keyboard.shared.isDown("KeyA")) {
 			this.speed.x = -PLAYER_WALK_SPEED;
-			this.playerAnim.playState("idle");
+			this.playerAnim.scale.set(0.1, 0.1);
+			moving = true; // El jugador se está moviendo
 		}
 		// Moverse hacia abajo
 		if (Keyboard.shared.isDown("KeyS")) {
 			this.speed.y = PLAYER_WALK_SPEED;
-			this.playerAnim.playState("idle");
+			moving = true;
 		}
 		// Moverse hacia arriba
 		if (Keyboard.shared.isDown("KeyW")) {
 			this.speed.y = -PLAYER_WALK_SPEED;
-			this.playerAnim.playState("idle");
+			moving = true;
 		}
 		// Moverse a la derecha
 		if (Keyboard.shared.isDown("KeyD")) {
 			this.speed.x = PLAYER_WALK_SPEED;
-			this.playerAnim.playState("idle");
+			this.playerAnim.scale.set(-0.1, 0.1);
+			moving = true;
+		}
+
+		// Cambiar la animación solo si el jugador está moviéndose
+		if (moving) {
+			this.playerAnim.playState("walk"); // Cambiar a la animación de caminar
+		} else {
+			this.playerAnim.playState("idle"); // Cambiar a la animación de estar quieto
 		}
 
 		if (Keyboard.shared.isDown("KeyJ")) {
 			this.playerAnim.playState("atk");
 		}
 	}
+
 
 	/** detection of player with collisions array (from TileMap collision tiles) */
 	public detectCollision(collisions: any[], _allowCollide?: boolean): boolean {

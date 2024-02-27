@@ -2,9 +2,14 @@ import type { BaseTexture } from "@pixi/core";
 import { Rectangle, Texture } from "@pixi/core";
 
 /* eslint-disable @typescript-eslint/naming-convention */
-export function GetTileTexture(baseTexture: BaseTexture, x: number, y: number, w: number, h: number): Texture {
+export function GetTileTexture(baseTexture: BaseTexture, x: number, y: number, w: number, h: number, _flip?: boolean): Texture {
 	// If we ask the same texture, with the same rectangle, we get the same name
-	const cacheKey: string = `${baseTexture.cacheId}-${x}-${y}-${w}-${h}`;
+	let cacheKey: string;
+	if (_flip) {
+		cacheKey = `${baseTexture.cacheId}-${x}-${y}-${w}-${h}-${_flip}`;
+	} else {
+		cacheKey = `${baseTexture.cacheId}-${x}-${y}-${w}-${h}`;
+	}
 	try {
 		// if we already created this tile, we just return it, it's saved inside pixi
 		return Texture.from(cacheKey, {}, true); // This true makes the try catch work
