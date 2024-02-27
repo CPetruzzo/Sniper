@@ -9,6 +9,7 @@ export class Character extends Container {
 	public terrainUnderCharacter: Terrain; // Guarda el terreno actual bajo el personaje
 	public tileX: number;
 	public tileY: number;
+	public movementPoints: number = 15;
 
 	constructor(initialPosX: number, initialPosY: number) {
 		super();
@@ -34,54 +35,74 @@ export class Character extends Container {
 		return new Point(this.playerPositionX, this.playerPositionY);
 	}
 
-	public moveUp(): void {
+	// Método genérico para mover al personaje en una dirección dada
+	private move(directionX: number, directionY: number): void {
 		if (this.terrainUnderCharacter) {
-			this.playerPositionY -= this.terrainUnderCharacter.getMovementCost() * Character.MOVESPEED;
-			this.tileY -= 1;
+			const movementCost = this.terrainUnderCharacter.getMovementCost();
+			if (this.movementPoints >= movementCost) {
+				this.playerPositionX += directionX * Character.MOVESPEED;
+				this.playerPositionY += directionY * Character.MOVESPEED;
+			}
 		} else {
-			this.playerPositionY -= Character.MOVESPEED;
-			this.tileY -= 1;
+			if (this.movementPoints >= 1) {
+				this.playerPositionX += directionX * Character.MOVESPEED;
+				this.playerPositionY += directionY * Character.MOVESPEED;
+			}
 		}
+		// Actualiza la posición visual del personaje
+		this.tileX += directionX;
+		this.tileY += directionY;
 		this.updatePlayerPosition();
+	}
+
+	public moveUp(): void {
+		this.move(0, -1); // Mover hacia arriba (Y negativo)
 	}
 
 	public moveDown(): void {
-		if (this.terrainUnderCharacter) {
-			this.playerPositionY += this.terrainUnderCharacter.getMovementCost() * Character.MOVESPEED;
-			this.tileY += 1;
-		} else {
-			this.playerPositionY += Character.MOVESPEED;
-			this.tileY += 1;
-		}
-		this.updatePlayerPosition();
+		this.move(0, 1); // Mover hacia abajo (Y positivo)
 	}
 
 	public moveLeft(): void {
-		if (this.terrainUnderCharacter) {
-			this.playerPositionX -= this.terrainUnderCharacter.getMovementCost() * Character.MOVESPEED;
-			this.tileX -= 1;
-		} else {
-			this.playerPositionX -= Character.MOVESPEED;
-			this.tileX -= 1;
-		}
-		this.updatePlayerPosition();
+		this.move(-1, 0); // Mover hacia la izquierda (X negativo)
 	}
 
 	public moveRight(): void {
-		if (this.terrainUnderCharacter) {
-			this.playerPositionX += this.terrainUnderCharacter.getMovementCost() * Character.MOVESPEED;
-			this.tileX += 1;
-		} else {
-			this.playerPositionX += Character.MOVESPEED;
-			this.tileX += 1;
-		}
-		this.updatePlayerPosition();
+		this.move(1, 0); // Mover hacia la derecha (X positivo)
 	}
+
 	public updatePlayerPosition(): void {
 		// Actualiza la posición del sprite del jugador
 		this.player.x = this.playerPositionX;
 		this.player.y = this.playerPositionY;
 		this.position.set(this.playerPositionX, this.playerPositionY);
 		console.log(this.tileX, this.tileY);
+	}
+
+	public moveTowards(targetTile: Terrain): void {
+		// Calcula el costo de movimiento hacia el objetivo
+		const movementCost = targetTile.getMovementCost();
+		console.log('movementCost', movementCost)
+
+		// Verifica si el personaje tiene suficiente movimiento restante
+		if (this.movementPoints >= movementCost) {
+			// Actualiza la posición del personaje y resta los puntos de movimiento
+			// this.playerPositionX = targetTile.x;
+			// this.playerPositionY = targetTile.y;
+			this.movementPoints -= movementCost;
+
+			// Actualiza la posición visual del personaje
+			this.updatePlayerPosition();
+		}
+	}
+
+	public canReachTile(tile: Terrain): boolean {
+		// Verifica si el personaje puede alcanzar el terreno basado en los puntos de movimiento restantes
+		return this.movementPoints >= tile.getMovementCost();
+	}
+
+	// Agrega un método para reiniciar los puntos de movimiento
+	public resetMovementPoints(): void {
+		this.movementPoints = 5; // Cambia esto al valor inicial deseado
 	}
 }
