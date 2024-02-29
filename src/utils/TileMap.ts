@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { Container } from "@pixi/display";
@@ -79,7 +80,7 @@ export class Map extends Container {
 
 						if (autoLayerTile.f === 1) {
 							tile.scale.x = -1;
-							tile.x = tile.x + 16
+							tile.x = tile.x + 16;
 						}
 
 						if (autoLayerTile.a) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Container } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { LevelCreator } from "../../../utils/LevelCreator";
@@ -9,6 +10,7 @@ import type { Player } from "./Player";
 import { Item } from "./Item";
 import { Tween } from "tweedle.js";
 import { navigateToNeighborLevel } from "./NeighbourManager";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 export class LDTKMapScene extends PixiScene {
 	public static readonly BUNDLES = ["package-1", "sfx"];
@@ -31,9 +33,7 @@ export class LDTKMapScene extends PixiScene {
 			console.log(level.mapData.levels[0].__neighbours);
 			// Ejemplo de uso
 			navigateToNeighborLevel("d53f9950-c640-11ed-8430-4942c04951ff", "n");
-
 		}
-
 	}
 
 	public override update(dt: number): void {
@@ -53,6 +53,7 @@ export class LDTKMapScene extends PixiScene {
 								case "Health":
 									player.detectCollision([item], true);
 									if (player.detectCollision([item])) {
+										SoundLib.playMusic("potion", { loop: false });
 										level.levelEntities.removeChild(item);
 										console.log(`Agarré el ${item.data.fieldInstances[0].__value}`);
 									}

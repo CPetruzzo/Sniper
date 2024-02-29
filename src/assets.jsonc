@@ -62,7 +62,8 @@
 			"name": "sfx",
 			"assets": {
 				"beep": "./sfx/beep.mp3",
-				"run": "./sfx/run.mp3"
+				"run": "./sfx/run.mp3",
+				"potion": "./sfx/GamePotion.mp3"
 			}
 		},
 		{

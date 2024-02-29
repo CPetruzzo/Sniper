@@ -111,7 +111,7 @@ export class Player extends PhysicsContainer {
 
 		this.playerImg = Sprite.from("./img/cheers1.png");
 		this.playerImg.scale.set(0.02);
-		this.playerImg.anchor.set(0.5)
+		this.playerImg.anchor.set(0.5);
 		this.playerImg.alpha = 0;
 		this.playerImg.x = this.playerAnim.x;
 		this.playerImg.y = this.playerAnim.y;
@@ -138,7 +138,6 @@ export class Player extends PhysicsContainer {
 			this.speed.x = -PLAYER_WALK_SPEED;
 			this.playerAnim.scale.set(PLAYER_SCALE, PLAYER_SCALE);
 			moving = true;
-
 		}
 		// Moverse hacia abajo
 		if (Keyboard.shared.isDown("KeyS")) {
@@ -173,15 +172,13 @@ export class Player extends PhysicsContainer {
 			this.playerAnim.playState("idle");
 			this.isRunningSoundPlaying = false;
 			SoundLib.stopMusic("run");
-
 		}
 
 		if (attacking) {
-			console.log('attacking', attacking)
+			console.log("attacking", attacking);
 			this.playerAnim.playState("atk", 0);
 		}
 	}
-
 
 	/** detection of player with collisions array (from TileMap collision tiles) */
 	public detectCollision(collisions: any[], _allowCollide?: boolean): boolean {
