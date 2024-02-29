@@ -63,6 +63,7 @@ export const BREAK_REAPPEAR_TIME = 2000;
 export const CURRENT_LEVEL: number = 0;
 export const PLAYER_WALK_SPEED: number = 0.05;
 export const LEVEL_SCALE: number = 3.5;
+export const PLAYER_SCALE: number = 0.09;
 
 
 

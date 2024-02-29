@@ -3,8 +3,9 @@
 import { Sprite, Texture } from "pixi.js";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { PhysicsContainer } from "../../../utils/PhysicsContainer";
-import { PLAYER_WALK_SPEED } from "../../../utils/constants";
+import { PLAYER_SCALE, PLAYER_WALK_SPEED } from "../../../utils/constants";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 export interface FieldDef {
 	identifier: string;
@@ -81,9 +82,12 @@ export interface PlayerData {
 }
 
 export class Player extends PhysicsContainer {
+	public static readonly BUNDLES = ["sfx"];
 	public data: PlayerData;
 	public playerImg: Sprite;
 	public playerAnim: StateMachineAnimator;
+	private isRunningSoundPlaying: boolean = false;
+
 	constructor(data: PlayerData) {
 		super();
 		this.data = data;
@@ -99,8 +103,8 @@ export class Player extends PhysicsContainer {
 			atkTextureArray.push(texture);
 		}
 		this.playerAnim = new StateMachineAnimator(true);
-		this.playerAnim.scale.set(0.1);
-		this.playerAnim.anchor.set(0.63, 0.6);
+		this.playerAnim.scale.set(PLAYER_SCALE);
+		this.playerAnim.anchor.set(0.63, 0.7);
 		this.playerAnim.addState("idle", idleTextureArray, 20);
 		this.playerAnim.addState("atk", atkTextureArray, 20);
 		this.playerAnim.playState("idle");
@@ -108,7 +112,7 @@ export class Player extends PhysicsContainer {
 		this.playerImg = Sprite.from("./img/cheers1.png");
 		this.playerImg.scale.set(0.02);
 		this.playerImg.anchor.set(0.5)
-		// this.playerImg.alpha = 0;
+		this.playerImg.alpha = 0;
 		this.playerImg.x = this.playerAnim.x;
 		this.playerImg.y = this.playerAnim.y;
 		this.pivot.set(this.playerAnim.x, this.playerAnim.y);
@@ -126,13 +130,15 @@ export class Player extends PhysicsContainer {
 	private handleMovement(): void {
 		this.stopMovement();
 
-		let moving = false; // Variable para verificar si el jugador se está moviendo
+		let moving = false;
+		let attacking = false;
 
 		// Moverse a la izquierda
 		if (Keyboard.shared.isDown("KeyA")) {
 			this.speed.x = -PLAYER_WALK_SPEED;
-			this.playerAnim.scale.set(0.1, 0.1);
-			moving = true; // El jugador se está moviendo
+			this.playerAnim.scale.set(PLAYER_SCALE, PLAYER_SCALE);
+			moving = true;
+
 		}
 		// Moverse hacia abajo
 		if (Keyboard.shared.isDown("KeyS")) {
@@ -147,19 +153,32 @@ export class Player extends PhysicsContainer {
 		// Moverse a la derecha
 		if (Keyboard.shared.isDown("KeyD")) {
 			this.speed.x = PLAYER_WALK_SPEED;
-			this.playerAnim.scale.set(-0.1, 0.1);
+			this.playerAnim.scale.set(-PLAYER_SCALE, PLAYER_SCALE);
 			moving = true;
 		}
 
-		// Cambiar la animación solo si el jugador está moviéndose
-		if (moving) {
-			this.playerAnim.playState("walk"); // Cambiar a la animación de caminar
-		} else {
-			this.playerAnim.playState("idle"); // Cambiar a la animación de estar quieto
+		// Atacar
+		if (Keyboard.shared.isDown("KeyJ")) {
+			attacking = true;
 		}
 
-		if (Keyboard.shared.isDown("KeyJ")) {
-			this.playerAnim.playState("atk");
+		// Reproducir la animación correspondiente
+		if (moving) {
+			this.playerAnim.playState("walk");
+			if (!this.isRunningSoundPlaying) {
+				SoundLib.playMusic("run", { singleInstance: false, loop: true });
+				this.isRunningSoundPlaying = true;
+			}
+		} else {
+			this.playerAnim.playState("idle");
+			this.isRunningSoundPlaying = false;
+			SoundLib.stopMusic("run");
+
+		}
+
+		if (attacking) {
+			console.log('attacking', attacking)
+			this.playerAnim.playState("atk", 0);
 		}
 	}
 
