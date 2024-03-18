@@ -12,11 +12,8 @@ import { DEFAULTS } from "tweedle.js";
 import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
-// import { Scene3D } from "./project/scenes/3dgame/Scene3D";
-// import { LoseScene } from "./project/scenes/BallCollisionGame/LoseScene";
-// import { RandomWorldMap } from "./project/scenes/WorldMap/WorldMap";
 import { JoystickEmits } from "./utils/Joystick";
-import { LDTKMapScene } from "./project/scenes/LDTKScene/LDTKMapScene";
+import { NutritionScene } from "./project/scenes/NutritionScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -77,7 +74,8 @@ window.dispatchEvent(new Event("resize"));
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
+	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(NutritionScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
